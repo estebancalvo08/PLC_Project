@@ -29,12 +29,12 @@ public final class Lexer {
      */
     public List<Token> lex() {
         List<Token> tokens = new ArrayList<>();
-        for(int i = 0; i < chars.length; i++)
+        for(int i = 0; i < chars.input.length(); i++)
         {
             if(chars.has(i))
             {
-                if(chars.get(i) == ' ')
-                    while(chars.get(i) == ' ')
+                if(chars.get(0) == ' ')
+                    while(chars.get(0) == ' ')
                         chars.advance();
                 else
                     tokens.add(lexToken());
@@ -53,13 +53,16 @@ public final class Lexer {
      * by {@link #lex()}
      */
     public Token lexToken() {
-        if(peek("\\d")) {
+        if(peek("[0-9-\\.]"))
             return lexNumber();
-        }
         else if(peek("\\","'"))
             return lexCharacter();
-        else throw new UnsupportedOperationException(); //TODO
-
+       else if(peek("[a-zA-z@]"))
+            return lexIdentifier();
+        else if(peek("\\","\""))
+            return lexString();
+        else
+            return lexOperator();
     }
 
     public Token lexIdentifier() {
@@ -67,7 +70,47 @@ public final class Lexer {
     }
 
     public Token lexNumber() {
-        throw new UnsupportedOperationException(); //TODO
+        String literal = "";
+        int begin = chars.index;
+        if(peek("\\."))
+            throw new ParseException("Illegal decimal", begin);
+        if (peek("-")) {
+            literal += '-';
+            chars.advance();
+        }
+        if(peek("0"))
+        {
+            while(peek("0"))
+            {
+                literal += "0";
+                chars.advance();
+            }
+            return new Token(Token.Type.INTEGER,literal,begin);
+        }
+
+        for(int i = chars.index; i < chars.input.length();i++)
+        {
+            if(peek("[0-9]")) {
+                literal += chars.get(0);
+                chars.advance();
+            }
+            else if(peek("."))
+                return isDecimal(begin,literal);
+        }
+        return new Token(Token.Type.INTEGER,literal,begin);
+    }
+    public Token isDecimal(int begin, String literal)
+    {
+        literal += '.';
+        chars.advance();
+        if(peek("[0-9]")) {
+            while (peek("[0-9]")) {
+                literal += chars.get(0);
+                chars.advance();
+            }
+        }
+        else throw new ParseException("Illegal decimal value", chars.index);
+        return new Token(Token.Type.DECIMAL,literal,begin);
     }
 
     public Token lexCharacter() {
