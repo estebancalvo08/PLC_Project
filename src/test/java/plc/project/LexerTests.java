@@ -106,6 +106,27 @@ public class LexerTests {
 
     @ParameterizedTest
     @MethodSource
+    void testPeekSingleChar(String test, String source, boolean success, String pattern) {
+        Assertions.assertEquals(success, new Lexer(source).peek(pattern));
+    }
+
+    private static Stream<Arguments> testPeekSingleChar() {
+        return Stream.of(
+                    Arguments.of("first char 0", "0123210a0b1c2", true, "0"),
+                    Arguments.of("first char 1", "0123210a0b1c2", false, "1"),
+                    Arguments.of("first char Digit (\\d)", "0123210a0b1c2", true, "\\d"),
+                    Arguments.of("first char Digit [0-9]", "0123210a0b1c2", true, "[0-9]"),
+                    Arguments.of("first char not digit", "0123210a0b1c2", false, "[^0-9]")
+
+        );
+    }
+
+    @Test
+    void testPeekMultiCharTrue() {
+        Assertions.assertTrue(new Lexer("0123210a0b1c2").peek("0","1","2","3"));
+    }
+    @ParameterizedTest
+    @MethodSource
     void testExamples(String test, String input, List<Token> expected) {
         test(input, expected, true);
     }
