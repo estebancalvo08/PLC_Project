@@ -125,6 +125,26 @@ public class LexerTests {
     void testPeekMultiCharTrue() {
         Assertions.assertTrue(new Lexer("0123210a0b1c2").peek("0","1","2","3"));
     }
+    @Test
+    void testPeekMultiCharFalse() {
+        Assertions.assertFalse(new Lexer("0123210a0b1c2").peek("0","1","2","3", "4"));
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testMatch(String test, String source, boolean success, String... patterns){
+        Assertions.assertEquals(success, new Lexer(source).match(patterns));
+    }
+    private static Stream<Arguments> testMatch(){
+        return Stream.of(
+                Arguments.of("Match ==", "== 5", true, new String[]{"=","="}),
+                Arguments.of("Match at End", "Let X == 5", false, new String[]{"5"}),
+                Arguments.of("Pattern Longer Than Source", "c", false, new String[]{"c","h"}),
+                Arguments.of("Empty Pattern but not Source", " ", false, new String[]{""}),
+                Arguments.of("First char wrong", "12321", false, new String[]{"2","2"}),
+                Arguments.of("Second char wrong", "12321", false, new String[]{"1","3"})
+                );
+    }
     @ParameterizedTest
     @MethodSource
     void testExamples(String test, String input, List<Token> expected) {
