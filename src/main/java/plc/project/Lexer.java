@@ -33,10 +33,13 @@ public final class Lexer {
         {
             if(chars.has(0))
             {
+                //If whiteSpace, advance and restart count for length
                if(peek("\\s"))
                    {chars.advance();chars.skip();}
+               //If escape character, make sure it is a valid escape character
                else if(peek("\\\\"))
-                   lexToken();
+                   lexEscape();
+               //Else, create a new token
                 else
                     tokens.add(lexToken());
             }
@@ -67,6 +70,7 @@ public final class Lexer {
     }
 
     public Token lexIdentifier() {
+        //Because initial character can be @, skip the first character
         chars.advance();
         for(int i = chars.index; i < chars.input.length(); i++)
         {
@@ -231,7 +235,6 @@ public final class Lexer {
             index++;
             length++;
         }
-
         public void skip() {
             length = 0;
         }
@@ -241,7 +244,5 @@ public final class Lexer {
             skip();
             return new Token(type, input.substring(start, index), start);
         }
-
     }
-
 }
