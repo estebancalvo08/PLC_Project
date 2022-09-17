@@ -85,10 +85,12 @@ public final class Lexer {
 
     public Token lexNumber() {
         int begin = chars.index;
-        if(peek("\\."))
+        if(peek("\\.") || peek("-", "\\."))
             throw new ParseException("Illegal decimal", begin);
         if (peek("-")) {
             chars.advance();
+            if(peek("0"))
+                throw new ParseException("Cannot have negative 0", chars.index);
         }
         if(peek("0"))
         {
