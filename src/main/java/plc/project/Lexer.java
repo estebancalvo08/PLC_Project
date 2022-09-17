@@ -84,9 +84,8 @@ public final class Lexer {
     }
 
     public Token lexNumber() {
-        int begin = chars.index;
         if(peek("\\.") || peek("-", "\\."))
-            throw new ParseException("Illegal decimal", begin);
+            throw new ParseException("Illegal decimal", chars.index);
         if (peek("-")) {
             chars.advance();
             if(peek("0"))
@@ -105,11 +104,11 @@ public final class Lexer {
                 chars.advance();
             }
             else if(peek("\\."))
-                return isDecimal(begin);
+                return isDecimal();
         }
         return chars.emit(Token.Type.INTEGER);
     }
-    public Token isDecimal(int begin)
+    public Token isDecimal()
     {
         chars.advance();
         if(peek("[0-9]"))
