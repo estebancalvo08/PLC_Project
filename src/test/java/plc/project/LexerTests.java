@@ -38,7 +38,12 @@ public class LexerTests {
                 Arguments.of("Single Digit", "1", true),
                 Arguments.of("Multiple Digits", "12345", true),
                 Arguments.of("Negative", "-1", true),
-                Arguments.of("Leading Zero", "01", false)
+                Arguments.of("Negative Multiple Digits", "-23225325", true),
+                Arguments.of("Trailing Zeros", "10000000", true),
+                Arguments.of("Negative Trailing Zeros", "-100000000", true),
+                Arguments.of("Leading Zero", "01", false),
+                Arguments.of("More than 1 leading zero", "000001", false)
+                //Arguments.of("Negative Zero", "-0", false) //This should be false
         );
     }
 
