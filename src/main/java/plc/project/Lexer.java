@@ -31,11 +31,12 @@ public final class Lexer {
         List<Token> tokens = new ArrayList<>();
         for(int i = 0; i < chars.input.length(); i++)
         {
-            if(chars.has(i))
+            if(chars.has(0))
             {
-                if(chars.get(0) == ' ')
-                    while(chars.get(0) == ' ')
-                        chars.advance();
+               if(peek("\\s"))
+                   {chars.advance();chars.skip();}
+               else if(peek("\\\\"))
+                   lexToken();
                 else
                     tokens.add(lexToken());
             }
@@ -55,18 +56,17 @@ public final class Lexer {
     public Token lexToken() {
         if(peek("[0-9-\\.]"))
             return lexNumber();
-        else if(peek("\\\\","'"))
+        else if(peek("'"))
             return lexCharacter();
        else if(peek("[a-zA-z@]"))
             return lexIdentifier();
-        else if(peek("\\\\","\""))
+        else if(peek("\""))
             return lexString();
         else
             return lexOperator();
     }
 
     public Token lexIdentifier() {
-        int begin = chars.index;
         chars.advance();
         for(int i = chars.index; i < chars.input.length(); i++)
         {
@@ -98,7 +98,7 @@ public final class Lexer {
             if(peek("[0-9]")) {
                 chars.advance();
             }
-            else if(peek("."))
+            else if(peek("\\."))
                 return isDecimal(begin);
         }
         return chars.emit(Token.Type.INTEGER);
@@ -114,19 +114,61 @@ public final class Lexer {
     }
 
     public Token lexCharacter() {
-        throw new UnsupportedOperationException();
+        //Move the char counter past the '
+        chars.advance();
+        //check for special character
+        if(peek("\\\\"))
+        {
+            chars.advance();
+            if(peek( "[bnrt'\"\\\\]"))
+                chars.advance();
+            else throw new ParseException("Illegal escape character", chars.index);
+        }
+        //if not special character, make sure it is allowed character but not the end /'
+        else {
+            if (peek("[^'\\\\]"))
+                chars.advance();
+            //If character is empty or contains lone \ token
+            else throw new ParseException("Illegal character in character Token", chars.index);
+        }
+         //check that the end of the char ends with /'
+        if(peek("'"))
+            chars.advance();
+        else throw new ParseException("Illegal end to character token", chars.index);
+        return chars.emit(Token.Type.CHARACTER);
     }
 
     public Token lexString() {
-        throw new UnsupportedOperationException(); //TODO
+        //Move the char counter past the '
+        chars.advance();
+        //check for special character
+        while(chars.has(0) && !peek("\"")) {
+            if (peek("\\\\")) {
+                chars.advance();
+                if (peek("[bnrt'\"\\\\]"))
+                    chars.advance();
+                else throw new ParseException("Illegal escape character", chars.index);
+            } else chars.advance();
+        }
+        if(peek("\""))
+            chars.advance();
+        else throw new ParseException("Illegal End of String", chars.index);
+       //throw new ParseException("Illegal End of String", chars.index);
+            return chars.emit(Token.Type.STRING);
     }
 
     public void lexEscape() {
-        throw new UnsupportedOperationException(); //TODO
+        chars.advance();
+        if(peek("[bnrt]"))
+            chars.advance();
+        else throw new ParseException("Illegal escape Character", chars.index);
     }
 
     public Token lexOperator() {
-        throw new UnsupportedOperationException(); //TODO
+        if(peek("&", "&") || peek("|", "|") || peek("!", "=") || peek("=","="))
+        {chars.advance(); chars.advance();}
+        else chars.advance();
+        return chars.emit(Token.Type.OPERATOR);
     }
 
     /**
