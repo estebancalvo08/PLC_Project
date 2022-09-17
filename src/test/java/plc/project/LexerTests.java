@@ -57,8 +57,14 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Multiple Digits", "123.456", true),
                 Arguments.of("Negative Decimal", "-1.0", true),
+                Arguments.of("Trailing Zeros", "123.00000000", true),
+                Arguments.of("Negative Trailing Zeros", "-123.000000", true),
                 Arguments.of("Trailing Decimal", "1.", false),
-                Arguments.of("Leading Decimal", ".5", false)
+                Arguments.of("Leading Decimal", ".5", false),
+                Arguments.of("Negative Leading Decimal", "-1.", false),
+                Arguments.of("Leading Zeros", "0001.000", false),
+                Arguments.of("Negative Leading Zeros", "-00001.000", false)
+                //Arguments.of("Negative Leading Decimal", "-.5", false)
         );
     }
 
