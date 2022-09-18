@@ -22,8 +22,14 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Alphabetic", "getName", true),
                 Arguments.of("Alphanumeric", "thelegend27", true),
+                Arguments.of("Hyphen, Underscore and Number within Token", "Legal1-_", true),
+                Arguments.of("Starting @", "@hello", true),
                 Arguments.of("Leading Hyphen", "-five", false),
-                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false)
+                Arguments.of("Leading Underscore", "_five", false),
+                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false),
+                Arguments.of("Space", " ", false),
+                Arguments.of("@ not at start", "Hello@hello", false),
+                Arguments.of("Two Identifers", "Two Tokens", false)
         );
     }
 
@@ -57,10 +63,14 @@ public class LexerTests {
                 Arguments.of("Multiple Digits", "123.456", true),
                 Arguments.of("Negative Decimal", "-1.0", true),
                 Arguments.of("Leading Lone Zero", "0.01", true),
+                Arguments.of("Negative Lone Zero", "-0.01", true),
                 Arguments.of("Trailing Decimal", "1.", false),
+                Arguments.of("Extra Zero at front", "00.1", false),
                 Arguments.of("Leading Decimal", ".5", false),
                 Arguments.of("Negative Leading Decimal", "-.5", false),
-                Arguments.of("Integer", "1", false)
+                Arguments.of("Integer", "1", false),
+                Arguments.of("Extra Decimal", "1.1.1", false),
+                Arguments.of("Extra Decimal", "1..1", false)
         );
     }
 
@@ -75,10 +85,13 @@ public class LexerTests {
                 Arguments.of("Alphabetic", "\'c\'", true),
                 Arguments.of("Newline Escape", "\'\\n\'", true),
                 Arguments.of("Backslash", "\'\\\\\'", true),
+                Arguments.of("Invalid Backslash", "\'\\\'", false),
                 Arguments.of("Empty", "\'\'", false),
                 Arguments.of("Multiple", "\'abc\'", false),
                 Arguments.of("Invalid ' within char", "\''\'", false),
-                Arguments.of("Invalid Escapes", "\'\\e\'", false)
+                Arguments.of("Invalid Escapes", "\'\\e\'", false),
+                Arguments.of("Undetermined", "\'a", false),
+                Arguments.of("Undetermined", "a'", false)
         );
     }
 
@@ -94,6 +107,7 @@ public class LexerTests {
                 Arguments.of("Alphabetic", "\"abc\"", true),
                 Arguments.of("String with Spaces", "\"Hello There\"", true),
                 Arguments.of("Newline Escape", "\"Hello,\\nWorld\"", true),
+                Arguments.of("String within String", "\"\\\"Hello There\\\"\"", true),
                 Arguments.of("Unterminated", "\"unterminated", false),
                 Arguments.of("Invalid Escape", "\"invalid\\escape\"", false)
         );
@@ -110,6 +124,9 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Character", "(", true),
                 Arguments.of("Comparison", "!=", true),
+                Arguments.of("Double &", "&&", true),
+                Arguments.of("Double |", "||", true),
+                Arguments.of("Triple &", "&&&", false),
                 Arguments.of("Space", " ", false),
                 Arguments.of("Tab", "\t", false)
         );
