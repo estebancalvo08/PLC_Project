@@ -22,8 +22,14 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Alphabetic", "getName", true),
                 Arguments.of("Alphanumeric", "thelegend27", true),
+                Arguments.of("Hyphen, Underscore and Number within Token", "Legal1-_", true),
+                Arguments.of("Starting @", "@hello", true),
                 Arguments.of("Leading Hyphen", "-five", false),
-                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false)
+                Arguments.of("Leading Underscore", "_five", false),
+                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false),
+                Arguments.of("Space", " ", false),
+                Arguments.of("@ not at start", "Hello@hello", false),
+                Arguments.of("Two Identifers", "Two Tokens", false)
         );
     }
 
@@ -36,9 +42,13 @@ public class LexerTests {
     private static Stream<Arguments> testInteger() {
         return Stream.of(
                 Arguments.of("Single Digit", "1", true),
+                Arguments.of("Trailing Zero", "100000000000", true),
+                Arguments.of("Trailing Zeros and negative number", "-100000000000", true),
                 Arguments.of("Multiple Digits", "12345", true),
                 Arguments.of("Negative", "-1", true),
-                Arguments.of("Leading Zero", "01", false)
+                Arguments.of("Leading Zero", "01", false),
+                Arguments.of("Negative Zero", "-0", false),
+                Arguments.of("Decimal", "1.1", false)
         );
     }
 
@@ -52,8 +62,15 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Multiple Digits", "123.456", true),
                 Arguments.of("Negative Decimal", "-1.0", true),
+                Arguments.of("Leading Lone Zero", "0.01", true),
+                Arguments.of("Negative Lone Zero", "-0.01", true),
                 Arguments.of("Trailing Decimal", "1.", false),
-                Arguments.of("Leading Decimal", ".5", false)
+                Arguments.of("Extra Zero at front", "00.1", false),
+                Arguments.of("Leading Decimal", ".5", false),
+                Arguments.of("Negative Leading Decimal", "-.5", false),
+                Arguments.of("Integer", "1", false),
+                Arguments.of("Extra Decimal", "1.1.1", false),
+                Arguments.of("Extra Decimal", "1..1", false)
         );
     }
 
@@ -67,8 +84,14 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Alphabetic", "\'c\'", true),
                 Arguments.of("Newline Escape", "\'\\n\'", true),
+                Arguments.of("Backslash", "\'\\\\\'", true),
+                Arguments.of("Invalid Backslash", "\'\\\'", false),
                 Arguments.of("Empty", "\'\'", false),
-                Arguments.of("Multiple", "\'abc\'", false)
+                Arguments.of("Multiple", "\'abc\'", false),
+                Arguments.of("Invalid ' within char", "\''\'", false),
+                Arguments.of("Invalid Escapes", "\'\\e\'", false),
+                Arguments.of("Undetermined", "\'a", false),
+                Arguments.of("Undetermined", "a'", false)
         );
     }
 
@@ -82,7 +105,9 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Empty", "\"\"", true),
                 Arguments.of("Alphabetic", "\"abc\"", true),
+                Arguments.of("String with Spaces", "\"Hello There\"", true),
                 Arguments.of("Newline Escape", "\"Hello,\\nWorld\"", true),
+                Arguments.of("String within String", "\"\\\"Hello There\\\"\"", true),
                 Arguments.of("Unterminated", "\"unterminated", false),
                 Arguments.of("Invalid Escape", "\"invalid\\escape\"", false)
         );
@@ -99,15 +124,12 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Character", "(", true),
                 Arguments.of("Comparison", "!=", true),
+                Arguments.of("Double &", "&&", true),
+                Arguments.of("Double |", "||", true),
+                Arguments.of("Triple &", "&&&", false),
                 Arguments.of("Space", " ", false),
                 Arguments.of("Tab", "\t", false)
         );
-    }
-
-    @ParameterizedTest
-    @MethodSource
-    void testExamples(String test, String input, List<Token> expected) {
-        test(input, expected, true);
     }
 
     private static Stream<Arguments> testExamples() {
@@ -125,7 +147,14 @@ public class LexerTests {
                         new Token(Token.Type.STRING, "\"Hello, World!\"", 6),
                         new Token(Token.Type.OPERATOR, ")", 21),
                         new Token(Token.Type.OPERATOR, ";", 22)
-                ))
+                )),
+                Arguments.of("Example 1", "char x = \'c\';", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "char", 0),
+                        new Token(Token.Type.IDENTIFIER, "x", 5),
+                        new Token(Token.Type.OPERATOR, "=", 7),
+                        new Token(Token.Type.CHARACTER, "\'c\'", 9),
+                        new Token(Token.Type.OPERATOR, ";", 12)
+                        ))
         );
     }
 
@@ -168,4 +197,51 @@ public class LexerTests {
         }
     }
 
+    //Testing the peek and match cases
+    /* @ParameterizedTest
+     @MethodSource
+     void testPeekSingleChar(String test, String source, boolean success, String pattern) {
+         Assertions.assertEquals(success, new Lexer(source).peek(pattern));
+     }
+
+     private static Stream<Arguments> testPeekSingleChar() {
+         return Stream.of(
+                     Arguments.of("first char 0", "0123210a0b1c2", true, "0"),
+                     Arguments.of("first char 1", "0123210a0b1c2", false, "1"),
+                     Arguments.of("first char Digit (\\d)", "0123210a0b1c2", true, "\\d"),
+                     Arguments.of("first char Digit [0-9]", "0123210a0b1c2", true, "[0-9]"),
+                     Arguments.of("first char not digit", "0123210a0b1c2", false, "[^0-9]")
+
+         );
+     }
+
+     @Test
+     void testPeekMultiCharTrue() {
+         Assertions.assertTrue(new Lexer("0123210a0b1c2").peek("0","1","2","3"));
+     }
+     @Test
+     void testPeekMultiCharFalse() {
+         Assertions.assertFalse(new Lexer("0123210a0b1c2").peek("0","1","2","3", "4"));
+     }
+
+     @ParameterizedTest
+     @MethodSource
+     void testMatch(String test, String source, boolean success, String... patterns){
+         Assertions.assertEquals(success, new Lexer(source).match(patterns));
+     }
+     private static Stream<Arguments> testMatch(){
+         return Stream.of(
+                 Arguments.of("Match ==", "== 5", true, new String[]{"=","="}),
+                 Arguments.of("Match at End", "Let X == 5", false, new String[]{"5"}),
+                 Arguments.of("Pattern Longer Than Source", "c", false, new String[]{"c","h"}),
+                 Arguments.of("Empty Pattern but not Source", " ", false, new String[]{""}),
+                 Arguments.of("First char wrong", "12321", false, new String[]{"2","2"}),
+                 Arguments.of("Second char wrong", "12321", false, new String[]{"1","3"})
+                 );
+     }*/
+    @ParameterizedTest
+    @MethodSource
+    void testExamples(String test, String input, List<Token> expected) {
+        test(input, expected, true);
+    }
 }
