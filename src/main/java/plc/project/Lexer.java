@@ -61,7 +61,7 @@ public final class Lexer {
             return lexNumber();
         else if(peek("'"))
             return lexCharacter();
-       else if(peek("[a-zA-z@]"))
+       else if(peek("[a-zA-Z@]"))
             return lexIdentifier();
         else if(peek("\""))
             return lexString();
@@ -89,8 +89,10 @@ public final class Lexer {
             throw new ParseException("Illegal decimal", chars.index);
         if (peek("-")) {
             chars.advance();
-            if(peek("0"))
-                throw new ParseException("Cannot have negative 0", chars.index);
+            if(peek("0", "\\."))
+            {chars.advance(); return isDecimal();}
+            else if (peek("[1-9]")){}
+            else throw new ParseException("Cannot have negative zero", chars.index);
         }
         //Check cases where leading number is 0, either decimal or int token
         if(peek("0"))
@@ -150,7 +152,7 @@ public final class Lexer {
     public Token lexString() {
         //Move the char counter past the '
         chars.advance();
-        //check for special character
+        //check for special character "H"e"l"l"o"
         while(chars.has(0) && !peek("\"")) {
             if (peek("\\\\")) {
                 lexEscape();
@@ -177,8 +179,8 @@ public final class Lexer {
         else throw new ParseException("Illegal escape Character", chars.index);
     }
     public Token lexOperator() {
-        if(peek("&", "&") || peek("|", "|") || peek("!", "=") || peek("=","="))
-        {chars.advance(); chars.advance();}
+        if(peek("&", "&") || peek("\\|", "\\|") || peek("!", "=") || peek("=","="))
+            match(".",".");
         else chars.advance();
         return chars.emit(Token.Type.OPERATOR);
     }
