@@ -1,5 +1,4 @@
 package plc.project;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,8 +36,8 @@ public final class Lexer {
                if(peek("\\s"))
                    {chars.advance();chars.skip();}
                //If escape character, make sure it is a valid escape character
-               else if(peek("\\\\"))
-                   blankSpace();
+               else if(peek("\\\\", "[bnrt]"))
+                    {chars.advance();chars.advance();chars.skip();}
                //Else, create a new token
                 else
                     tokens.add(lexToken());
@@ -57,7 +56,7 @@ public final class Lexer {
      * by {@link #lex()}
      */
     public Token lexToken() {
-        if(peek("[0-9-\\.]"))
+        if(peek("[0-9-]"))
             return lexNumber();
         else if(peek("'"))
             return lexCharacter();
@@ -89,9 +88,7 @@ public final class Lexer {
             throw new ParseException("Illegal decimal", chars.index);
         if (peek("-")) {
             chars.advance();
-            if(peek("0", "\\."))
-            {chars.advance(); return isDecimal();}
-            else if (peek("[1-9]")){}
+            if(peek("0", "\\.") || peek("[1-9]")){}
             else throw new ParseException("Cannot have negative zero", chars.index);
         }
         //Check cases where leading number is 0, either decimal or int token
@@ -109,10 +106,9 @@ public final class Lexer {
         //if token is legal
         for(int i = chars.index; i < chars.input.length();i++)
         {
-            if(peek("[0-9]")) {
+            if(peek("[0-9]"))
                 chars.advance();
-            }
-            else if(peek("\\."))
+            else if(peek("\\.", "[0-9]"))
                 return isDecimal();
         }
         return chars.emit(Token.Type.INTEGER);
@@ -120,7 +116,7 @@ public final class Lexer {
     public Token isDecimal()
     {
         chars.advance();
-        if(peek("[0-9]"))
+        if(peek("[0-9]+"))
             while (peek("[0-9]"))
                 chars.advance();
         else throw new ParseException("Illegal decimal value", chars.index);
@@ -132,9 +128,7 @@ public final class Lexer {
         chars.advance();
         //check for special character
         if(peek("\\\\"))
-        {
             lexEscape();
-        }
         //if not special character, make sure it is allowed character but not the end /'
         else {
             if (peek("[^'\\\\]"))
@@ -154,9 +148,9 @@ public final class Lexer {
         chars.advance();
         //check for special character "H"e"l"l"o"
         while(chars.has(0) && !peek("\"")) {
-            if (peek("\\\\")) {
+            if (peek("\\\\"))
                 lexEscape();
-            } else chars.advance();
+            else chars.advance();
         }
         if(peek("\""))
             chars.advance();
@@ -172,12 +166,6 @@ public final class Lexer {
         else throw new ParseException("Illegal escape Character", chars.index);
     }
 
-    public void blankSpace() {
-        chars.advance();
-        if(peek("[bnrt]"))
-            chars.advance();
-        else throw new ParseException("Illegal escape Character", chars.index);
-    }
     public Token lexOperator() {
         if(peek("&", "&") || peek("\\|", "\\|") || peek("!", "=") || peek("=","="))
             match(".",".");
