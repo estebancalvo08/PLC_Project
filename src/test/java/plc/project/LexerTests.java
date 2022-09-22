@@ -181,11 +181,12 @@ public class LexerTests {
                         new Token(Token.Type.IDENTIFIER, "one", 0),
                         new Token(Token.Type.IDENTIFIER, "two", 5)
                 )),
-                Arguments.of("Example 5", "0001", Arrays.asList(
+                Arguments.of("Example 5", "0001hello", Arrays.asList(
                         new Token(Token.Type.INTEGER, "0", 0),
                         new Token(Token.Type.INTEGER, "0", 1),
                         new Token(Token.Type.INTEGER, "0", 2),
-                        new Token(Token.Type.INTEGER, "1", 3)
+                        new Token(Token.Type.INTEGER, "1", 3),
+                        new Token(Token.Type.IDENTIFIER, "hello", 4)
                 ))
         );
     }

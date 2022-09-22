@@ -28,10 +28,7 @@ public final class Lexer {
      */
     public List<Token> lex() {
         List<Token> tokens = new ArrayList<>();
-        for(int i = 0; i < chars.input.length(); i++)
-        {
-            if(chars.has(0))
-            {
+        while(chars.has(0)){
                 //If whiteSpace, advance and restart count for length
                if(peek("\\s"))
                    {chars.advance();chars.skip();}
@@ -41,8 +38,6 @@ public final class Lexer {
                //Else, create a new token
                 else
                     tokens.add(lexToken());
-            }
-            else break;
         }
         return tokens;
     }
@@ -71,12 +66,12 @@ public final class Lexer {
     public Token lexIdentifier() {
         //Because initial character can be @, skip the first character
         chars.advance();
-        for(int i = chars.index; i < chars.input.length(); i++)
+        while(chars.has(0))
         {
             if(peek("[A-Za-z0-9_-]"))
                 chars.advance();
             else if(peek("@"))
-                throw new ParseException("Illegal use of @ symbol in identifier", i);
+                throw new ParseException("Illegal use of @ symbol in identifier", chars.index);
             else break;
         }
         return chars.emit(Token.Type.IDENTIFIER);
@@ -101,12 +96,13 @@ public final class Lexer {
                 return chars.emit(Token.Type.INTEGER);
         }
         //if token is legal
-        for(int i = chars.index; i < chars.input.length();i++)
+        while(chars.has(0))
         {
             if(peek("[0-9]"))
                 chars.advance();
             else if(peek("\\.", "[0-9]"))
                 return isDecimal();
+            else break;
         }
         return chars.emit(Token.Type.INTEGER);
     }
