@@ -97,11 +97,8 @@ public final class Lexer {
             chars.advance();
             if(peek("\\."))
                 return isDecimal();
-            else {
-                while (peek("0"))
-                    chars.advance();
+            else
                 return chars.emit(Token.Type.INTEGER);
-            }
         }
         //if token is legal
         for(int i = chars.index; i < chars.input.length();i++)
@@ -116,7 +113,7 @@ public final class Lexer {
     public Token isDecimal()
     {
         chars.advance();
-        if(peek("[0-9]+"))
+        if(peek("[0-9]"))
             while (peek("[0-9]"))
                 chars.advance();
         else throw new ParseException("Illegal decimal value", chars.index);
