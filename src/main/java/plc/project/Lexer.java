@@ -30,7 +30,7 @@ public final class Lexer {
         List<Token> tokens = new ArrayList<>();
         while(chars.has(0)){
                 //If whiteSpace, advance and restart count for length
-               if(peek("\\s"))
+               if(peek("[\b\n\r\t ]"))
                    {chars.advance();chars.skip();}
                //If escape character, make sure it is a valid escape character
                else if(peek("\\\\", "[bnrt]"))
@@ -70,8 +70,6 @@ public final class Lexer {
         {
             if(peek("[A-Za-z0-9_-]"))
                 chars.advance();
-            else if(peek("@"))
-                throw new ParseException("Illegal use of @ symbol in identifier", chars.index);
             else break;
         }
         return chars.emit(Token.Type.IDENTIFIER);
@@ -82,9 +80,9 @@ public final class Lexer {
         if(peek("\\.") || peek("-", "\\."))
             throw new ParseException("Illegal decimal", chars.index);
         if (peek("-")) {
-            chars.advance();
-            if(peek("0", "\\.") || peek("[1-9]")){}
-            else throw new ParseException("Cannot have negative zero", chars.index);
+            if(peek(".","0", "\\.") || peek(".","[1-9]")){chars.advance();}
+            else return lexOperator();
+            //else throw new ParseException("Cannot have negative zero", chars.index);
         }
         //Check cases where leading number is 0, either decimal or int token
         if(peek("0"))
@@ -124,7 +122,7 @@ public final class Lexer {
             lexEscape();
         //if not special character, make sure it is allowed character but not the end /'
         else {
-            if (peek("[^'\\\\]"))
+            if (peek("[^'\n\r\\\\]"))
                 chars.advance();
             //If character is empty or contains lone \ token
             else throw new ParseException("Illegal character in character Token", chars.index);
@@ -143,6 +141,8 @@ public final class Lexer {
         while(chars.has(0) && !peek("\"")) {
             if (peek("\\\\"))
                 lexEscape();
+            else if(peek("[\n\r]"))
+                throw new ParseException("Illegal newline in string", chars.index);
             else chars.advance();
         }
         if(peek("\""))
