@@ -24,6 +24,7 @@ public class LexerTests {
                 Arguments.of("Alphanumeric", "thelegend27", true),
                 Arguments.of("Hyphen, Underscore and Number within Token", "Legal1-_", true),
                 Arguments.of("Starting @", "@hello", true),
+                Arguments.of("Not WhiteSpace", "one\"\\\"\\\\n\\\"\"two", false),
                 Arguments.of("Leading Hyphen", "-five", false),
                 Arguments.of("Leading Underscore", "_five", false),
                 Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false),
@@ -91,7 +92,10 @@ public class LexerTests {
                 Arguments.of("Invalid ' within char", "\''\'", false),
                 Arguments.of("Invalid Escapes", "\'\\e\'", false),
                 Arguments.of("Undetermined", "\'a", false),
-                Arguments.of("Undetermined", "a'", false)
+                Arguments.of("Newline Escape", "\'\n\'", false),
+                Arguments.of("Newline Escape", "\'\r\'", false),
+                Arguments.of("Undetermined", "a'", false),
+                Arguments.of("Illegal End", "\'a\"", false)
         );
     }
 
@@ -105,11 +109,14 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Empty", "\"\"", true),
                 Arguments.of("Alphabetic", "\"abc\"", true),
-                Arguments.of("String with Spaces", "\"Hello There\"", true),
+                Arguments.of("String with Spaces", "\"Hello\\\\There\"", true),
                 Arguments.of("Newline Escape", "\"Hello,\\nWorld\"", true),
                 Arguments.of("String within String", "\"\\\"Hello There\\\"\"", true),
                 Arguments.of("Unterminated", "\"unterminated", false),
-                Arguments.of("Invalid Escape", "\"invalid\\escape\"", false)
+                Arguments.of("Unterminated", "\"illegal newline\r\"", false),
+                Arguments.of("Invalid Escape", "\"invalid\\escape\"", false),
+                Arguments.of("Valid Escape", "\"\\\\b\"", true),
+                Arguments.of("Long String", "\"\\'hel\\'lo \\b\\\"\\n\\\"\\'\\n\\'\"", true)
         );
     }
 
@@ -148,21 +155,96 @@ public class LexerTests {
                         new Token(Token.Type.OPERATOR, ")", 21),
                         new Token(Token.Type.OPERATOR, ";", 22)
                 )),
-                Arguments.of("Example 1", "char x = \'c\';", Arrays.asList(
+                Arguments.of("Example 3", "char x = \'c\';", Arrays.asList(
                         new Token(Token.Type.IDENTIFIER, "char", 0),
                         new Token(Token.Type.IDENTIFIER, "x", 5),
                         new Token(Token.Type.OPERATOR, "=", 7),
                         new Token(Token.Type.CHARACTER, "\'c\'", 9),
                         new Token(Token.Type.OPERATOR, ";", 12)
-                        ))
+                        )),
+                Arguments.of("Example 4", "1.1.1;", Arrays.asList(
+                        new Token(Token.Type.DECIMAL, "1.1", 0),
+                        new Token(Token.Type.OPERATOR, ".", 3),
+                        new Token(Token.Type.INTEGER, "1", 4),
+                        new Token(Token.Type.OPERATOR, ";", 5)
+                )),
+                Arguments.of("Example 4", "1.toString();", Arrays.asList(
+                        new Token(Token.Type.INTEGER, "1", 0),
+                        new Token(Token.Type.OPERATOR, ".", 1),
+                        new Token(Token.Type.IDENTIFIER, "toString", 2),
+                        new Token(Token.Type.OPERATOR, "(", 10),
+                        new Token(Token.Type.OPERATOR, ")", 11),
+                        new Token(Token.Type.OPERATOR, ";", 12)
+                )),
+
+                Arguments.of("Example 5", "one\"\\b\"two", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "one", 0),
+                        new Token(Token.Type.STRING, "\"\\b\"", 3),
+                        new Token(Token.Type.IDENTIFIER, "two", 7)
+                )),
+                Arguments.of("Example 6", "one\\btwo", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "one", 0),
+                        new Token(Token.Type.IDENTIFIER, "two", 5)
+                )),
+                Arguments.of("Example 7", "0001hello", Arrays.asList(
+                        new Token(Token.Type.INTEGER, "0", 0),
+                        new Token(Token.Type.INTEGER, "0", 1),
+                        new Token(Token.Type.INTEGER, "0", 2),
+                        new Token(Token.Type.INTEGER, "1", 3),
+                        new Token(Token.Type.IDENTIFIER, "hello", 4)
+                )),
+                Arguments.of("Example 8", "-five", Arrays.asList(
+                        new Token(Token.Type.OPERATOR, "-", 0),
+                        new Token(Token.Type.IDENTIFIER, "five", 1)
+                )),
+                Arguments.of("Example 9", "one\btwo", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "one", 0),
+                        new Token(Token.Type.IDENTIFIER, "two", 4)
+                )),
+                Arguments.of("Example 10", "-0", Arrays.asList(
+                        new Token(Token.Type.OPERATOR, "-", 0),
+                        new Token(Token.Type.INTEGER, "0", 1)
+                        )),
+                Arguments.of("Example 11", "@Identifer@two-!", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "@Identifer", 0),
+                        new Token(Token.Type.IDENTIFIER, "@two-", 10),
+                        new Token(Token.Type.OPERATOR, "!", 15)
+                        )),
+                Arguments.of("Example 12", "-+!@$%", Arrays.asList(
+                        new Token(Token.Type.OPERATOR, "-", 0),
+                        new Token(Token.Type.OPERATOR, "+", 1),
+                        new Token(Token.Type.OPERATOR, "!", 2),
+                        new Token(Token.Type.IDENTIFIER, "@", 3),
+                        new Token(Token.Type.OPERATOR, "$", 4),
+                        new Token(Token.Type.OPERATOR, "%", 5)
+                ))
         );
     }
 
-    @Test
-    void testException() {
+
+    private static Stream<Arguments> testExceptions() {
+        return Stream.of(
+                Arguments.of("Example 1", "\"unterminated", 13),
+                Arguments.of("Example 2", "\"unt\\erminated", 5),
+                Arguments.of("Example 3", "\"unt\n\"", 4),
+                Arguments.of("Example 4", "\"unt\r\"", 4),
+                Arguments.of("Example 5", "\'\n\'", 1),
+                Arguments.of("Example 6", "\''\'", 1),
+                Arguments.of("Example 7", "\'abc\'", 2),
+                Arguments.of("Example 8", "\'\'", 1),
+                Arguments.of("Example 9", "\'a", 2)
+                );
+    }
+
+    private static void testParseExceptions(String input, int index) {
         ParseException exception = Assertions.assertThrows(ParseException.class,
-                () -> new Lexer("\"unterminated").lex());
-        Assertions.assertEquals(13, exception.getIndex());
+                () -> new Lexer(input).lex());
+        Assertions.assertEquals(index, exception.getIndex());
+    }
+    @ParameterizedTest
+    @MethodSource
+    void testExceptions(String test, String input, int index) {
+        testParseExceptions(input, index);
     }
 
     /**
@@ -197,51 +279,10 @@ public class LexerTests {
         }
     }
 
-    //Testing the peek and match cases
-    /* @ParameterizedTest
-     @MethodSource
-     void testPeekSingleChar(String test, String source, boolean success, String pattern) {
-         Assertions.assertEquals(success, new Lexer(source).peek(pattern));
-     }
-
-     private static Stream<Arguments> testPeekSingleChar() {
-         return Stream.of(
-                     Arguments.of("first char 0", "0123210a0b1c2", true, "0"),
-                     Arguments.of("first char 1", "0123210a0b1c2", false, "1"),
-                     Arguments.of("first char Digit (\\d)", "0123210a0b1c2", true, "\\d"),
-                     Arguments.of("first char Digit [0-9]", "0123210a0b1c2", true, "[0-9]"),
-                     Arguments.of("first char not digit", "0123210a0b1c2", false, "[^0-9]")
-
-         );
-     }
-
-     @Test
-     void testPeekMultiCharTrue() {
-         Assertions.assertTrue(new Lexer("0123210a0b1c2").peek("0","1","2","3"));
-     }
-     @Test
-     void testPeekMultiCharFalse() {
-         Assertions.assertFalse(new Lexer("0123210a0b1c2").peek("0","1","2","3", "4"));
-     }
-
-     @ParameterizedTest
-     @MethodSource
-     void testMatch(String test, String source, boolean success, String... patterns){
-         Assertions.assertEquals(success, new Lexer(source).match(patterns));
-     }
-     private static Stream<Arguments> testMatch(){
-         return Stream.of(
-                 Arguments.of("Match ==", "== 5", true, new String[]{"=","="}),
-                 Arguments.of("Match at End", "Let X == 5", false, new String[]{"5"}),
-                 Arguments.of("Pattern Longer Than Source", "c", false, new String[]{"c","h"}),
-                 Arguments.of("Empty Pattern but not Source", " ", false, new String[]{""}),
-                 Arguments.of("First char wrong", "12321", false, new String[]{"2","2"}),
-                 Arguments.of("Second char wrong", "12321", false, new String[]{"1","3"})
-                 );
-     }*/
     @ParameterizedTest
     @MethodSource
     void testExamples(String test, String input, List<Token> expected) {
         test(input, expected, true);
     }
+
 }
