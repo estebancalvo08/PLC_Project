@@ -182,8 +182,8 @@ public final class Parser {
         if(match("&&") || match("||"))
         {
             String op = tokens.get(-1).getLiteral();
-            Ast.Expression right = parseComparisonExpression();
-            return new Ast.Expression.Binary(op, left, right);
+            Ast.Expression right = parseLogicalExpression();
+            return new Ast.Expression.Binary(op,left,right);
         }
         return left;
     }
@@ -196,7 +196,7 @@ public final class Parser {
         if(match("<") || match(">") || match("==") || match("!="))
         {
             String op = tokens.get(-1).getLiteral();
-            Ast.Expression right = parseAdditiveExpression();
+            Ast.Expression right = parseComparisonExpression();
             return new Ast.Expression.Binary(op, left, right);
         }
         return left;
@@ -210,7 +210,7 @@ public final class Parser {
         if(match("+") || match("-"))
         {
             String op = tokens.get(-1).getLiteral();
-            Ast.Expression right = parseMultiplicativeExpression();
+            Ast.Expression right = parseAdditiveExpression();
             return new Ast.Expression.Binary(op, left, right);
         }
         return left;
@@ -224,7 +224,7 @@ public final class Parser {
         if(match("*") || match("/") || match("^"))
         {
             String op = tokens.get(-1).getLiteral();
-            Ast.Expression right = parsePrimaryExpression();
+            Ast.Expression right = parseMultiplicativeExpression();
             return new Ast.Expression.Binary(op, left, right);
         }
         return left;
