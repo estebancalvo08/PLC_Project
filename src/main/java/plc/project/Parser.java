@@ -1,6 +1,11 @@
 package plc.project;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * The parser takes the sequence of tokens emitted by the lexer and turns that
@@ -84,21 +89,27 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Statement parseStatement() throws ParseException {
-
-        // bro i have no clue what im doing :skull:
-        if (peek("LET")) {
+        if (match("LET")) {
             return parseDeclarationStatement();
-        } else if (peek("SWITCH")) {
+        } else if (match("SWITCH")) {
             return parseSwitchStatement();
-        } else if (peek("IF")) {
+        } else if (match("IF")) {
             return parseIfStatement();
-        } else if (peek("WHILE")) {
+        } else if (match("WHILE")) {
             return parseWhileStatement();
-        } else if (peek("RETURN")) {
+        } else if (match("RETURN")) {
             return parseReturnStatement();
         } else {
-            return parseExpression();
+            Ast.Expression left =  parseExpression();
+            if(match("="))
+            {
+                Ast.Expression right = parseExpression();
+                return new Ast.Statement.Assignment(left,right);
+            }
+            if(match(";"))  return new Ast.Statement.Expression(left);
+            else throw new ParseException("Missing ; in expression statement", tokens.get(0).getIndex());
         }
+        //throw new ParseException("Illegal Statement Syntax", tokens.get(0).getIndex());
     }
 
     /**
@@ -159,35 +170,64 @@ public final class Parser {
      * Parses the {@code expression} rule.
      */
     public Ast.Expression parseExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        if(tokens.has(0)) return parseLogicalExpression();
+        throw new ParseException("Parse Expression contains Illegal token index", tokens.get(0).getIndex());
     }
 
     /**
      * Parses the {@code logical-expression} rule.
      */
     public Ast.Expression parseLogicalExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expression left = parseComparisonExpression();
+        if(match("&&") || match("||"))
+        {
+            String op = tokens.get(-1).getLiteral();
+            Ast.Expression right = parseComparisonExpression();
+            return new Ast.Expression.Binary(op, left, right);
+        }
+        return left;
     }
 
     /**
      * Parses the {@code equality-expression} rule.
      */
     public Ast.Expression parseComparisonExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expression left = parseAdditiveExpression();
+        if(match("<") || match(">") || match("==") || match("!="))
+        {
+            String op = tokens.get(-1).getLiteral();
+            Ast.Expression right = parseAdditiveExpression();
+            return new Ast.Expression.Binary(op, left, right);
+        }
+        return left;
     }
 
     /**
      * Parses the {@code additive-expression} rule.
      */
     public Ast.Expression parseAdditiveExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expression left = parseMultiplicativeExpression();
+        if(match("+") || match("-"))
+        {
+            String op = tokens.get(-1).getLiteral();
+            Ast.Expression right = parseMultiplicativeExpression();
+            return new Ast.Expression.Binary(op, left, right);
+        }
+        return left;
     }
 
     /**
      * Parses the {@code multiplicative-expression} rule.
      */
     public Ast.Expression parseMultiplicativeExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expression left = parsePrimaryExpression();
+        if(match("*") || match("/") || match("^"))
+        {
+            String op = tokens.get(-1).getLiteral();
+            Ast.Expression right = parsePrimaryExpression();
+            return new Ast.Expression.Binary(op, left, right);
+        }
+        return left;
     }
 
     /**
@@ -197,7 +237,67 @@ public final class Parser {
      * not strictly necessary.
      */
     public Ast.Expression parsePrimaryExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        if(match("TRUE"))
+            return new Ast.Expression.Literal(true);
+        else if(match("FALSE"))
+            return new Ast.Expression.Literal(false);
+        else if(match("NIL"))
+            return new Ast.Expression.Literal(null);
+        //Because the match advances the index by 1, want to get(-1) to go back to token that was read
+        else if(match(Token.Type.INTEGER))
+            return new Ast.Expression.Literal(new BigInteger(tokens.get(-1).getLiteral()));
+        else if(match(Token.Type.DECIMAL))
+            return new Ast.Expression.Literal(new BigDecimal(tokens.get(-1).getLiteral()));
+        else if(match(Token.Type.CHARACTER))
+        {
+            //not sure what he means by replace any escape character, implement later after test submission
+            String toReturn = tokens.get(-1).getLiteral();
+            toReturn = toReturn.replace("'", "");
+            return new Ast.Expression.Literal(new Character(toReturn.charAt(0)));
+        }
+        else if(match(Token.Type.STRING))
+        {
+            //not sure what he means by replace any escape character, implement later after test submission
+            String toReturn = tokens.get(-1).getLiteral();
+            toReturn = toReturn.replace("\"", "");
+            toReturn = toReturn.replaceAll("\\\\b", "\b");
+            toReturn = toReturn.replaceAll("\\\\n", "\n");
+            toReturn = toReturn.replaceAll("\\\\r", "\r");
+            toReturn = toReturn.replaceAll("\\\\t", "\t");
+            return new Ast.Expression.Literal(new String(toReturn));
+        }
+        else if(match("("))
+        {
+
+            Ast.Expression expression = parseExpression();
+            if(match(")"))
+                return new Ast.Expression.Group(expression);
+            else throw new ParseException("Illegal grouping of Expression", tokens.get(0).getIndex());
+        }
+        else if(match(Token.Type.IDENTIFIER))
+        {
+            String Name = tokens.get(-1).getLiteral();
+            if(match("(")){
+                List<Ast.Expression> params = new ArrayList<>();
+                while(tokens.has(0) && !peek(")"))
+                {
+                    params.add(parseExpression());
+                    if(!match(",")) break;
+                }
+                if(match(")"))
+                    return new Ast.Expression.Function(Name, params);
+                else throw new ParseException("Illegal end of function call", tokens.get(0).getIndex());
+            }
+            if(match("["))
+            {
+                Ast.Expression expression = parseExpression();
+                if(match("]"))
+                    return new Ast.Expression.Access(Optional.of(expression), Name);
+                else throw new ParseException("Illegal closing of access expression", tokens.get(0).getIndex());
+            }
+            return new Ast.Expression.Access(Optional.empty(), Name);
+        }
+        throw new ParseException("Illegal primary expression type", tokens.get(0).getIndex());
     }
 
     /**
