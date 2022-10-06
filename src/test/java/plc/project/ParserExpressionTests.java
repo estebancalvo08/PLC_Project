@@ -187,20 +187,20 @@ final class ParserExpressionTests {
                 ),
                 Arguments.of("Grouped Binary with more expressions",
                         Arrays.asList(
-                                //(expr1 + expr2 - expr3)
+                                //(expr1 * expr2 - expr3)
                                 new Token(Token.Type.OPERATOR, "(", 0),
                                 new Token(Token.Type.IDENTIFIER, "expr1", 1),
-                                new Token(Token.Type.OPERATOR, "+", 7),
+                                new Token(Token.Type.OPERATOR, "*", 7),
                                 new Token(Token.Type.IDENTIFIER, "expr2", 8),
                                 new Token(Token.Type.OPERATOR, "-", 14),
                                 new Token(Token.Type.IDENTIFIER, "expr3", 15),
                                 new Token(Token.Type.OPERATOR, ")", 21)
                         ),
-                        new Ast.Expression.Group(new Ast.Expression.Binary("+",
-                                new Ast.Expression.Access(Optional.empty(), "expr1"),
-                                new Ast.Expression.Binary("-",
-                                        new Ast.Expression.Access(Optional.empty(), "expr2"),
-                                        new Ast.Expression.Access(Optional.empty(), "expr3"))
+                        new Ast.Expression.Group(new Ast.Expression.Binary("-",
+                                new Ast.Expression.Binary("*",
+                                        new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                        new Ast.Expression.Access(Optional.empty(), "expr2")),
+                                new Ast.Expression.Access(Optional.empty(), "expr3")
                         )
                 )),
                 /*
@@ -281,9 +281,9 @@ final class ParserExpressionTests {
                         )
                 )
                 ,
-                Arguments.of("Binary Addition multiple times",
+                Arguments.of("Binary Addition With Multiple Expressions",
                         Arrays.asList(
-                                //expr1 + expr2
+                                //expr1 + expr2 + expr3
                                 new Token(Token.Type.IDENTIFIER, "expr1", 0),
                                 new Token(Token.Type.OPERATOR, "+", 6),
                                 new Token(Token.Type.IDENTIFIER, "expr2", 8),
@@ -298,6 +298,27 @@ final class ParserExpressionTests {
                                 )
                         )
                 ),
+                Arguments.of("Binary Operations With Multiple Expressions",
+                        Arrays.asList(
+                                //expr1 * expr2 + expr3 * expr4
+                                new Token(Token.Type.IDENTIFIER, "expr1", 0),
+                                new Token(Token.Type.OPERATOR, "*", 6),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 8),
+                                new Token(Token.Type.OPERATOR, "+", 14),
+                                new Token(Token.Type.IDENTIFIER, "expr3", 15),
+                                new Token(Token.Type.OPERATOR, "*", 21),
+                                new Token(Token.Type.IDENTIFIER, "expr4", 22)
+                        ),
+                        new Ast.Expression.Binary("+",
+                                new Ast.Expression.Binary("*",
+                                        new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                        new Ast.Expression.Access(Optional.empty(), "expr2")
+                                ),
+                                new Ast.Expression.Binary("*",
+                                        new Ast.Expression.Access(Optional.empty(), "expr3"),
+                                        new Ast.Expression.Access(Optional.empty(), "expr4")
+                                )
+                )),
                 Arguments.of("Binary Multiplication",
                         Arrays.asList(
                                 //expr1 * expr2
