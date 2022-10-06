@@ -274,11 +274,13 @@ public final class Parser {
         }
         else if(match("("))
         {
-
             Ast.Expression expression = parseExpression();
-            if(match(")"))
+            if (match(")")) {
                 return new Ast.Expression.Group(expression);
-            else throw new ParseException("Illegal grouping of Expression", tokens.get(0).getIndex());
+            }
+            else {
+                throw new ParseException("Illegal grouping of Expression", tokens.get(-1).getIndex());
+            }
         }
         else if(match(Token.Type.IDENTIFIER))
         {

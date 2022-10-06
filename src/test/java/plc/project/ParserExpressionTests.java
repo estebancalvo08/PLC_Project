@@ -177,7 +177,7 @@ final class ParserExpressionTests {
                                         new Ast.Expression.Access(Optional.empty(), "expr2"),
                                         new Ast.Expression.Access(Optional.empty(), "expr3"))
                         )
-                ))
+                )),
                 /*
                 Arguments.of("More Grouped Binary with multiple expressions",
                         Arrays.asList(
@@ -198,7 +198,16 @@ final class ParserExpressionTests {
                         )
                 ))
                 */
-
+                Arguments.of("Grouped Binary Missing Right Parenthesis",
+                        Arrays.asList(
+                                //(expr1 + expr2
+                                new Token(Token.Type.OPERATOR, "(", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr1", 1),
+                                new Token(Token.Type.OPERATOR, "+", 6),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 7)
+                        ),
+                        null
+                )
         );
     }
 
