@@ -107,7 +107,7 @@ public final class Parser {
                 return new Ast.Statement.Assignment(left,right);
             }
             if(match(";"))  return new Ast.Statement.Expression(left);
-            else throw new ParseException("Missing ; in expression statement", tokens.get(0).getIndex());
+            else throw new ParseException("Illegal Expression in Statement", tokens.get(0).getIndex());
         }
         //throw new ParseException("Illegal Statement Syntax", tokens.get(0).getIndex());
     }
