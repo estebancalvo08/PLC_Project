@@ -378,6 +378,14 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "2")
                         )
 
+                ),
+                Arguments.of("Binary Missing Operand",
+                        Arrays.asList(
+                                // expr1 +
+                                new Token(Token.Type.IDENTIFIER, "expr1", 0),
+                                new Token(Token.Type.OPERATOR, "+", 6)
+                        ),
+                        null
                 )
         );
     }
