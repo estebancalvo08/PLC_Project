@@ -38,12 +38,37 @@ final class ParserExpressionTests {
                         ),
                         new Ast.Statement.Expression(new Ast.Expression.Function("name", Arrays.asList()))
                 ),
-                Arguments.of("Function Expression",
+                Arguments.of("Function Expression Missing semicolon",
                         Arrays.asList(
                                 //name();
                                 new Token(Token.Type.IDENTIFIER, "name", 0),
                                 new Token(Token.Type.OPERATOR, "(", 4),
                                 new Token(Token.Type.OPERATOR, ")", 5)
+                        ),
+                        null
+                ),
+                Arguments.of("Function Call with arguments",
+                        Arrays.asList(
+                                //name(age);
+                                new Token(Token.Type.IDENTIFIER, "name", 0),
+                                new Token(Token.Type.OPERATOR, "(", 4),
+                                new Token(Token.Type.IDENTIFIER, "age", 5),
+                                new Token(Token.Type.OPERATOR, ")", 8),
+                                new Token(Token.Type.OPERATOR, ";", 7)
+                        ),
+                        new Ast.Statement.Expression(new Ast.Expression.Function("name", Arrays.asList(
+                                new Ast.Expression.Access(Optional.empty(), "age")))
+                        )
+                ),
+                Arguments.of("Function Call with arguments, and trailing comma",
+                        Arrays.asList(
+                                //name(age,);
+                                new Token(Token.Type.IDENTIFIER, "name", 0),
+                                new Token(Token.Type.OPERATOR, "(", 4),
+                                new Token(Token.Type.IDENTIFIER, "age", 5),
+                                new Token(Token.Type.IDENTIFIER, ",", 8),
+                                new Token(Token.Type.OPERATOR, ")", 9),
+                                new Token(Token.Type.OPERATOR, ";", 10)
                         ),
                         null
                 )

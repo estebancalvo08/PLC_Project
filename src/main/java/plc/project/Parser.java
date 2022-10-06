@@ -213,8 +213,7 @@ public final class Parser {
      */
     public Ast.Expression parseAdditiveExpression() throws ParseException {
         Ast.Expression left = parseMultiplicativeExpression();
-        if(match("+") || match("-"))
-        {
+        if(match("+") || match("-")) {
             String op = tokens.get(-1).getLiteral();
             Ast.Expression right = parseAdditiveExpression();
             return new Ast.Expression.Binary(op, left, right);
@@ -287,10 +286,15 @@ public final class Parser {
             String Name = tokens.get(-1).getLiteral();
             if(match("(")){
                 List<Ast.Expression> params = new ArrayList<>();
-                while(tokens.has(0) && !peek(")"))
-                {
+                while(tokens.has(0) && !peek(")")) {
                     params.add(parseExpression());
-                    if(!match(",")) break;
+                    if (!match(",")) {
+                        break;
+                    }
+                    // case of trailing comma
+                    if (peek(")")) {
+                        throw new ParseException("Trailing comma", tokens.get(0).getIndex());
+                    }
                 }
                 if(match(")"))
                     return new Ast.Expression.Function(Name, params);
