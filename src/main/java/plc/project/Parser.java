@@ -106,8 +106,14 @@ public final class Parser {
                 Ast.Expression right = parseExpression();
                 return new Ast.Statement.Assignment(left,right);
             }
-            if(match(";"))  return new Ast.Statement.Expression(left);
-            else throw new ParseException("Missing ; in expression statement", tokens.get(0).getIndex());
+            if(match(";")) {
+                return new Ast.Statement.Expression(left);
+            }
+            else {
+                //get(-1) because need to go back one index if there is no semicolon
+                throw new ParseException("Missing ; in expression statement", tokens.get(-1).getIndex());
+            }
+
         }
         //throw new ParseException("Illegal Statement Syntax", tokens.get(0).getIndex());
     }

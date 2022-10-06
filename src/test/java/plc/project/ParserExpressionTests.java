@@ -37,6 +37,15 @@ final class ParserExpressionTests {
                                 new Token(Token.Type.OPERATOR, ";", 6)
                         ),
                         new Ast.Statement.Expression(new Ast.Expression.Function("name", Arrays.asList()))
+                ),
+                Arguments.of("Function Expression",
+                        Arrays.asList(
+                                //name();
+                                new Token(Token.Type.IDENTIFIER, "name", 0),
+                                new Token(Token.Type.OPERATOR, "(", 4),
+                                new Token(Token.Type.OPERATOR, ")", 5)
+                        ),
+                        null
                 )
         );
     }
@@ -168,17 +177,18 @@ final class ParserExpressionTests {
                                         new Ast.Expression.Access(Optional.empty(), "expr2"),
                                         new Ast.Expression.Access(Optional.empty(), "expr3"))
                         )
-                ))/*,
+                ))
+                /*
                 Arguments.of("More Grouped Binary with multiple expressions",
                         Arrays.asList(
                                 // (expr1 * expr2 - expr3)
                                 new Token(Token.Type.OPERATOR, "(", 0),
                                 new Token(Token.Type.IDENTIFIER, "expr1", 1),
                                 new Token(Token.Type.OPERATOR, "*", 7),
-                                new Token(Token.Type.IDENTIFIER, "expr2", 8),
-                                new Token(Token.Type.OPERATOR, "-", 14),
-                                new Token(Token.Type.IDENTIFIER, "expr3", 15),
-                                new Token(Token.Type.OPERATOR, ")", 21)
+                                new Token(Token.Type.IDENTIFIER, "expr2", 9),
+                                new Token(Token.Type.OPERATOR, "-", 15),
+                                new Token(Token.Type.IDENTIFIER, "expr3", 17),
+                                new Token(Token.Type.OPERATOR, ")", 22)
                         ),
                         new Ast.Expression.Group(new Ast.Expression.Binary("*",
                                 new Ast.Expression.Access(Optional.empty(), "expr1"),
@@ -186,7 +196,9 @@ final class ParserExpressionTests {
                                         new Ast.Expression.Access(Optional.empty(), "expr2"),
                                         new Ast.Expression.Access(Optional.empty(), "expr3"))
                         )
-                ))*/
+                ))
+                */
+
         );
     }
 
