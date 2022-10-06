@@ -61,6 +61,22 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "name"),
                                 new Ast.Expression.Access(Optional.empty(), "value")
                         )
+                ),
+                Arguments.of("Assigning to a list/array thing",
+                        Arrays.asList(
+                                // name[0] = value;
+                                new Token(Token.Type.IDENTIFIER, "name", 0),
+                                new Token(Token.Type.OPERATOR, "[", 4),
+                                new Token(Token.Type.IDENTIFIER, "0", 5),
+                                new Token(Token.Type.OPERATOR, "]", 6),
+                                new Token(Token.Type.OPERATOR, "=", 8),
+                                new Token(Token.Type.IDENTIFIER, "value", 10),
+                                new Token(Token.Type.OPERATOR, ";", 15)
+                        ),
+                        new Ast.Statement.Assignment(
+                                new Ast.Expression.Access(Optional.of(new Ast.Expression.Access(Optional.empty(), "0")), "name"),
+                                new Ast.Expression.Access(Optional.empty(), "value")
+                        )
                 )
         );
     }
@@ -96,6 +112,10 @@ final class ParserExpressionTests {
                 Arguments.of("Escape Character",
                         Arrays.asList(new Token(Token.Type.STRING, "\"Hello,\\nWorld!\"", 0)),
                         new Ast.Expression.Literal("Hello,\nWorld!")
+                ),
+                Arguments.of("Null",
+                        Arrays.asList(new Token(Token.Type.IDENTIFIER, "NIL", 0)),
+                        new Ast.Expression.Literal(null)
                 )
         );
     }
@@ -148,7 +168,25 @@ final class ParserExpressionTests {
                                         new Ast.Expression.Access(Optional.empty(), "expr2"),
                                         new Ast.Expression.Access(Optional.empty(), "expr3"))
                         )
-                ))
+                ))/*,
+                Arguments.of("More Grouped Binary with multiple expressions",
+                        Arrays.asList(
+                                // (expr1 * expr2 - expr3)
+                                new Token(Token.Type.OPERATOR, "(", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr1", 1),
+                                new Token(Token.Type.OPERATOR, "*", 7),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 8),
+                                new Token(Token.Type.OPERATOR, "-", 14),
+                                new Token(Token.Type.IDENTIFIER, "expr3", 15),
+                                new Token(Token.Type.OPERATOR, ")", 21)
+                        ),
+                        new Ast.Expression.Group(new Ast.Expression.Binary("*",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Binary("-",
+                                        new Ast.Expression.Access(Optional.empty(), "expr2"),
+                                        new Ast.Expression.Access(Optional.empty(), "expr3"))
+                        )
+                ))*/
         );
     }
 
@@ -225,6 +263,54 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "expr1"),
                                 new Ast.Expression.Access(Optional.empty(), "expr2")
                         )
+                ),
+                Arguments.of("Binary Inequality",
+                        Arrays.asList(
+                                //uno != dos
+                                new Token(Token.Type.IDENTIFIER, "uno", 0),
+                                new Token(Token.Type.OPERATOR, "!=", 4),
+                                new Token(Token.Type.IDENTIFIER, "dos", 7)
+                        ),
+                        new Ast.Expression.Binary("!=",
+                                new Ast.Expression.Access(Optional.empty(), "uno"),
+                                new Ast.Expression.Access(Optional.empty(), "dos")
+                        )
+                ),
+                Arguments.of("Binary Or",
+                        Arrays.asList(
+                                //expr1 || expr2
+                                new Token(Token.Type.IDENTIFIER, "expr1", 0),
+                                new Token(Token.Type.OPERATOR, "||", 6),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 10)
+                        ),
+                        new Ast.Expression.Binary("||",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2")
+                        )
+                ),
+                Arguments.of("Binary Subtraction",
+                        Arrays.asList(
+                                //expr1 - expr2
+                                new Token(Token.Type.IDENTIFIER, "expr1", 0),
+                                new Token(Token.Type.OPERATOR, "-", 6),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 8)
+                        ),
+                        new Ast.Expression.Binary("-",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2")
+                        )
+                ),
+                Arguments.of("Binary Less than",
+                        Arrays.asList(
+                                // 1 < 2
+                                new Token(Token.Type.IDENTIFIER, "1", 0),
+                                new Token(Token.Type.OPERATOR, "<", 2),
+                                new Token(Token.Type.IDENTIFIER, "2", 4)
+                        ), new Ast.Expression.Binary("<",
+                                new Ast.Expression.Access(Optional.empty(), "1"),
+                                new Ast.Expression.Access(Optional.empty(), "2")
+                        )
+
                 )
         );
     }
