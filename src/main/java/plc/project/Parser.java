@@ -107,7 +107,7 @@ public final class Parser {
                 return new Ast.Statement.Assignment(left,right);
             }
             if(match(";"))  return new Ast.Statement.Expression(left);
-            else throw new ParseException("Illegal Expression in Statement", tokens.get(0).getIndex());
+            else throw new ParseException("Illegal Expression in Statement", tokens.get(-1).getIndex());
         }
         //throw new ParseException("Illegal Statement Syntax", tokens.get(0).getIndex());
     }
@@ -179,11 +179,14 @@ public final class Parser {
      */
     public Ast.Expression parseLogicalExpression() throws ParseException {
         Ast.Expression left = parseComparisonExpression();
-        if(match("&&") || match("||"))
+        Ast.Expression right;
+        while(match("&&") || match("||"))
         {
             String op = tokens.get(-1).getLiteral();
-            Ast.Expression right = parseLogicalExpression();
-            return new Ast.Expression.Binary(op,left,right);
+            right = parseComparisonExpression();
+            if(!(peek("&&") || peek("||")))
+                return new Ast.Expression.Binary(op, left, right);
+            else left = new Ast.Expression.Binary(op, left, right);
         }
         return left;
     }
@@ -193,11 +196,14 @@ public final class Parser {
      */
     public Ast.Expression parseComparisonExpression() throws ParseException {
         Ast.Expression left = parseAdditiveExpression();
-        if(match("<") || match(">") || match("==") || match("!="))
+        Ast.Expression right;
+        while(match("<") || match(">") || match("==") || match("!="))
         {
             String op = tokens.get(-1).getLiteral();
-            Ast.Expression right = parseComparisonExpression();
-            return new Ast.Expression.Binary(op, left, right);
+            right = parseAdditiveExpression();
+            if(!(peek("<") || peek(">") || peek("==") || peek("!=")))
+                return new Ast.Expression.Binary(op, left, right);
+            else left = new Ast.Expression.Binary(op, left, right);
         }
         return left;
     }
@@ -207,11 +213,14 @@ public final class Parser {
      */
     public Ast.Expression parseAdditiveExpression() throws ParseException {
         Ast.Expression left = parseMultiplicativeExpression();
-        if(match("+") || match("-"))
+        Ast.Expression right;
+        while(match("+") || match("-"))
         {
             String op = tokens.get(-1).getLiteral();
-            Ast.Expression right = parseAdditiveExpression();
-            return new Ast.Expression.Binary(op, left, right);
+            right = parseMultiplicativeExpression();
+            if(!(peek("+") || peek("-")))
+                return new Ast.Expression.Binary(op, left, right);
+            else left = new Ast.Expression.Binary(op, left, right);
         }
         return left;
     }
@@ -221,11 +230,14 @@ public final class Parser {
      */
     public Ast.Expression parseMultiplicativeExpression() throws ParseException {
         Ast.Expression left = parsePrimaryExpression();
-        if(match("*") || match("/") || match("^"))
+        Ast.Expression right;
+        while(match("*") || match("/") || match("^"))
         {
             String op = tokens.get(-1).getLiteral();
-            Ast.Expression right = parseMultiplicativeExpression();
-            return new Ast.Expression.Binary(op, left, right);
+            right = parsePrimaryExpression();
+            if(!(peek("*") || peek("/") || peek("^")))
+                return new Ast.Expression.Binary(op, left, right);
+            else left = new Ast.Expression.Binary(op, left, right);
         }
         return left;
     }
@@ -272,7 +284,7 @@ public final class Parser {
             Ast.Expression expression = parseExpression();
             if(match(")"))
                 return new Ast.Expression.Group(expression);
-            else throw new ParseException("Illegal grouping of Expression", tokens.get(0).getIndex());
+            else throw new ParseException("Illegal grouping of Expression", tokens.get(-1).getIndex());
         }
         else if(match(Token.Type.IDENTIFIER))
         {
@@ -282,22 +294,23 @@ public final class Parser {
                 while(tokens.has(0) && !peek(")"))
                 {
                     params.add(parseExpression());
-                    if(!match(",")) break;
+                    if(match(",", ")")) throw new ParseException("Illegal end of function call", tokens.get(-1).getIndex());
+                    if(!match(",") ) break;
                 }
                 if(match(")"))
                     return new Ast.Expression.Function(Name, params);
-                else throw new ParseException("Illegal end of function call", tokens.get(0).getIndex());
+                else throw new ParseException("Illegal end of function call", tokens.get(-1).getIndex());
             }
             if(match("["))
             {
                 Ast.Expression expression = parseExpression();
                 if(match("]"))
                     return new Ast.Expression.Access(Optional.of(expression), Name);
-                else throw new ParseException("Illegal closing of access expression", tokens.get(0).getIndex());
+                else throw new ParseException("Illegal closing of access expression", tokens.get(-1).getIndex());
             }
             return new Ast.Expression.Access(Optional.empty(), Name);
         }
-        throw new ParseException("Illegal primary expression type", tokens.get(0).getIndex());
+        throw new ParseException("Illegal primary expression type", tokens.get(-1).getIndex());
     }
 
     /**
