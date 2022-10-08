@@ -81,6 +81,11 @@ final class ParserExpressionTests {
                                 new Token(Token.Type.OPERATOR, "]", 5)
                         ),
                         null)
+                ,
+                Arguments.of("; with no expression", Arrays.asList(
+                                new Token(Token.Type.OPERATOR, ";", 0)
+                        ),
+                        null)
         );
     }
 
@@ -368,6 +373,89 @@ final class ParserExpressionTests {
         );
     }
 
+    private static Stream<Arguments> testExpressionExceptions() {
+        return Stream.of(
+                Arguments.of( Arrays.asList(
+                                //expr -
+                                new Token(Token.Type.IDENTIFIER, "expr", 0),
+                                new Token(Token.Type.OPERATOR, "-", 5)
+                        ), 6),
+                Arguments.of( Arrays.asList(
+                        //expr -
+                        new Token(Token.Type.IDENTIFIER, "name", 0),
+                        new Token(Token.Type.OPERATOR, "(", 5),
+                        new Token(Token.Type.IDENTIFIER, "expr", 6),
+                        new Token(Token.Type.OPERATOR, ",", 10),
+                        new Token(Token.Type.OPERATOR, ")", 11)
+                ), 11),
+                Arguments.of( Arrays.asList(
+                        //expr -
+                        new Token(Token.Type.OPERATOR, "?", 0)
+                ), 0),
+                Arguments.of( Arrays.asList(
+                        //expr -
+                        new Token(Token.Type.IDENTIFIER, "name", 0),
+                        new Token(Token.Type.OPERATOR, "(", 4),
+                        new Token(Token.Type.IDENTIFIER, "expr", 5)),9),
+                Arguments.of( Arrays.asList(
+                        //expr -
+                        new Token(Token.Type.IDENTIFIER, "name", 0),
+                        new Token(Token.Type.OPERATOR, "(", 4),
+                        new Token(Token.Type.IDENTIFIER, "expr", 5),
+                        new Token(Token.Type.OPERATOR, "]", 9)),9)
+        );
+    }
+
+    private static void testExpressions(List<Token> tokens, int index) {
+        ParseException exception = Assertions.assertThrows(ParseException.class,
+                () -> new Parser(tokens).parseExpression());
+        Assertions.assertEquals(index, exception.getIndex());
+    }
+    @ParameterizedTest
+    @MethodSource
+    void testExpressionExceptions(List<Token> tokens, int index) {
+        testExpressions(tokens, index);
+    }
+
+
+    private static Stream<Arguments> testStatementExceptions() {
+        return Stream.of(
+                Arguments.of( Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "expr", 0),
+                        new Token(Token.Type.OPERATOR, "=", 5),
+                        new Token(Token.Type.OPERATOR, ";", 7)
+                ), 7),
+                Arguments.of( Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "name", 0)
+                ), 4),
+                Arguments.of( Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "name", 0),
+                        new Token(Token.Type.OPERATOR, "=", 5),
+                        new Token(Token.Type.IDENTIFIER, "name2", 7)
+                        ), 12),
+                Arguments.of( Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "name", 0),
+                        new Token(Token.Type.OPERATOR, "=", 5),
+                        new Token(Token.Type.IDENTIFIER, "name2", 7),
+                        new Token(Token.Type.OPERATOR, "=", 13),
+                        new Token(Token.Type.IDENTIFIER, "name3", 15)
+
+                ), 13),
+                Arguments.of( Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "f", 0)
+                ), 1)
+        );
+    }
+    private static void testStatements(List<Token> tokens, int index) {
+        ParseException exception = Assertions.assertThrows(ParseException.class,
+                () -> new Parser(tokens).parseStatement());
+        Assertions.assertEquals(index, exception.getIndex());
+    }
+    @ParameterizedTest
+    @MethodSource
+    void testStatementExceptions(List<Token> tokens, int index) {
+        testStatements(tokens, index);
+    }
     /**
      * Standard test function. If expected is null, a ParseException is expected
      * to be thrown (not used in the provided tests).

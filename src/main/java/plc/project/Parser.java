@@ -89,26 +89,38 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Statement parseStatement() throws ParseException {
-        if (match("LET")) {
-            return parseDeclarationStatement();
-        } else if (match("SWITCH")) {
-            return parseSwitchStatement();
-        } else if (match("IF")) {
-            return parseIfStatement();
-        } else if (match("WHILE")) {
-            return parseWhileStatement();
-        } else if (match("RETURN")) {
-            return parseReturnStatement();
-        } else {
-            Ast.Expression left =  parseExpression();
-            if(match("="))
-            {
-                Ast.Expression right = parseExpression();
-                return new Ast.Statement.Assignment(left,right);
+            if (match("LET")) {
+                return parseDeclarationStatement();
+            } else if (match("SWITCH")) {
+                return parseSwitchStatement();
+            } else if (match("IF")) {
+                return parseIfStatement();
+            } else if (match("WHILE")) {
+                return parseWhileStatement();
+            } else if (match("RETURN")) {
+                return parseReturnStatement();
+            } else {
+                Ast.Expression left = parseExpression();
+                if (match("=")) {
+                    Ast.Expression right = parseExpression();
+                    if (match(";")) return new Ast.Statement.Assignment(left, right);
+                    else
+                    {
+                        if(tokens.has(0))
+                            throw new ParseException("Illegal Assignment statement", tokens.get(0).getIndex());
+                        else
+                            throw new ParseException("Illegal Expression in Statement", tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                    }
+                }
+                if (match(";")) return new Ast.Statement.Expression(left);
+                else
+                {
+                    if(tokens.has(0))
+                        throw new ParseException("Illegal Assignment statement", tokens.get(0).getIndex());
+                    else
+                        throw new ParseException("Illegal Expression in Statement", tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                }
             }
-            if(match(";"))  return new Ast.Statement.Expression(left);
-            else throw new ParseException("Illegal Expression in Statement", tokens.get(-1).getIndex());
-        }
     }
 
     /**
@@ -170,7 +182,7 @@ public final class Parser {
      */
     public Ast.Expression parseExpression() throws ParseException {
         if(tokens.has(0)) return parseLogicalExpression();
-        throw new ParseException("Parse Expression contains Illegal token index", tokens.get(0).getIndex());
+        else throw new ParseException("Parse Expression contains Illegal token index", tokens.get(0).getIndex());
     }
 
     /**
@@ -283,7 +295,7 @@ public final class Parser {
             Ast.Expression expression = parseExpression();
             if(match(")"))
                 return new Ast.Expression.Group(expression);
-            else throw new ParseException("Illegal grouping of Expression", tokens.get(-1).getIndex());
+            else throw new ParseException("Illegal grouping of Expression", tokens.get(-1).getIndex() + 1);
         }
         else if(match(Token.Type.IDENTIFIER))
         {
@@ -293,23 +305,29 @@ public final class Parser {
                 while(tokens.has(0) && !peek(")"))
                 {
                     params.add(parseExpression());
-                    if(match(",", ")")) throw new ParseException("Illegal end of function call", tokens.get(-1).getIndex());
+                    if(peek(",", ")")) throw new ParseException("Illegal end of function call", tokens.get(0).getIndex() + 1);
                     if(!match(",") ) break;
                 }
                 if(match(")"))
                     return new Ast.Expression.Function(Name, params);
-                else throw new ParseException("Illegal end of function call", tokens.get(-1).getIndex());
+                else throw new ParseException("Illegal end of function call", tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
             }
             if(match("["))
             {
                 Ast.Expression expression = parseExpression();
                 if(match("]"))
                     return new Ast.Expression.Access(Optional.of(expression), Name);
-                else throw new ParseException("Illegal closing of access expression", tokens.get(-1).getIndex());
+                else throw new ParseException("Illegal closing of access expression", tokens.get(-1).getIndex() + 1);
             }
             return new Ast.Expression.Access(Optional.empty(), Name);
         }
-        throw new ParseException("Illegal primary expression type", tokens.get(-1).getIndex());
+        if(tokens.index != 0)
+        {
+            if(tokens.has(0))
+                throw new ParseException("Illegal Primary Expression", tokens.get(0).getIndex());
+            else throw new ParseException("Illegal Primary Expression", tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+        }
+        else throw new ParseException("Illegal Operator at beginning of expression", 0);
     }
 
     /**
