@@ -104,23 +104,12 @@ public final class Parser {
                 if (match("=")) {
                     Ast.Expression right = parseExpression();
                     if (match(";")) return new Ast.Statement.Assignment(left, right);
-                    else
-                    {
-                        if(tokens.has(0))
-                            throw new ParseException("Illegal Assignment statement", tokens.get(0).getIndex());
-                        else
-                            throw new ParseException("Illegal Expression in Statement", tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
-                    }
+                    else throwError("Illegal Assignment statement");
                 }
                 if (match(";")) return new Ast.Statement.Expression(left);
-                else
-                {
-                    if(tokens.has(0))
-                        throw new ParseException("Illegal Assignment statement", tokens.get(0).getIndex());
-                    else
-                        throw new ParseException("Illegal Expression in Statement", tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
-                }
+                else throwError("Illegal Assignment statement");
             }
+            return null;
     }
 
     /**
@@ -273,14 +262,12 @@ public final class Parser {
             return new Ast.Expression.Literal(new BigDecimal(tokens.get(-1).getLiteral()));
         else if(match(Token.Type.CHARACTER))
         {
-            //not sure what he means by replace any escape character, implement later after test submission
             String toReturn = tokens.get(-1).getLiteral();
             toReturn = toReturn.replace("'", "");
             return new Ast.Expression.Literal(new Character(toReturn.charAt(0)));
         }
         else if(match(Token.Type.STRING))
         {
-            //not sure what he means by replace any escape character, implement later after test submission
             String toReturn = tokens.get(-1).getLiteral();
             toReturn = toReturn.replace("\"", "");
             toReturn = toReturn.replaceAll("\\\\b", "\b");
@@ -295,7 +282,7 @@ public final class Parser {
             Ast.Expression expression = parseExpression();
             if(match(")"))
                 return new Ast.Expression.Group(expression);
-            else throw new ParseException("Illegal grouping of Expression", tokens.get(-1).getIndex() + 1);
+            else throwError("Illegal Grouping of Expression");
         }
         else if(match(Token.Type.IDENTIFIER))
         {
@@ -310,25 +297,28 @@ public final class Parser {
                 }
                 if(match(")"))
                     return new Ast.Expression.Function(Name, params);
-                else throw new ParseException("Illegal end of function call", tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+                else throwError("Illegal End of Function Call");
             }
             if(match("["))
             {
                 Ast.Expression expression = parseExpression();
                 if(match("]"))
                     return new Ast.Expression.Access(Optional.of(expression), Name);
-                else throw new ParseException("Illegal closing of access expression", tokens.get(-1).getIndex() + 1);
+                else throwError("Illegal Closing of Access Operator");
             }
             return new Ast.Expression.Access(Optional.empty(), Name);
         }
-        if(tokens.index != 0)
-        {
-            if(tokens.has(0))
-                throw new ParseException("Illegal Primary Expression", tokens.get(0).getIndex());
-            else throw new ParseException("Illegal Primary Expression", tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
-        }
-        else throw new ParseException("Illegal Operator at beginning of expression", 0);
+        throwError("Illegal Operator as expression");
+        return null;
     }
+
+    private void throwError(String error) throws ParseException
+    {
+        if(tokens.has(0))
+            throw new ParseException(error, tokens.get(0).getIndex());
+        else throw new ParseException(error, tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+    }
+
 
     /**
      * As in the lexer, returns {@code true} if the current sequence of tokens

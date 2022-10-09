@@ -192,6 +192,66 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "expr2")
                         ))
                 ),
+                Arguments.of("Grouped Function",
+                        Arrays.asList(
+                            new Token(Token.Type.OPERATOR, "(", 0),
+                            new Token(Token.Type.IDENTIFIER, "func", 1),
+                            new Token(Token.Type.OPERATOR, "(", 5),
+                            new Token(Token.Type.IDENTIFIER, "expr1", 6),
+                            new Token(Token.Type.OPERATOR, ",", 11),
+                            new Token(Token.Type.IDENTIFIER, "expr2", 12),
+                            new Token(Token.Type.OPERATOR, ",", 17),
+                            new Token(Token.Type.IDENTIFIER, "expr3", 18),
+                            new Token(Token.Type.OPERATOR, ")", 23),
+                            new Token(Token.Type.OPERATOR, ")", 24)
+                        ),
+                        new Ast.Expression.Group(new Ast.Expression.Function("func", Arrays.asList(
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2"),
+                                new Ast.Expression.Access(Optional.empty(), "expr3")
+                        ))))
+                ,
+                //Tests the expression ( func(expr1, expr2, expr3[func2(NIL, expr4)] ) )
+                Arguments.of("Test All",
+                        Arrays.asList(
+                                new Token(Token.Type.OPERATOR, "(", 0),
+                                new Token(Token.Type.IDENTIFIER, "func", 1),
+                                new Token(Token.Type.OPERATOR, "(", 5),
+                                new Token(Token.Type.IDENTIFIER, "expr1", 6),
+                                new Token(Token.Type.OPERATOR, ",", 11),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 12),
+                                new Token(Token.Type.OPERATOR, ",", 17),
+                                new Token(Token.Type.IDENTIFIER, "expr3", 18),
+                                new Token(Token.Type.OPERATOR, "[", 23),
+                                new Token(Token.Type.IDENTIFIER, "func2", 24),
+                                new Token(Token.Type.OPERATOR, "(", 29),
+                                new Token(Token.Type.IDENTIFIER, "NIL", 30),
+                                new Token(Token.Type.OPERATOR, ",", 33),
+                                new Token(Token.Type.IDENTIFIER, "expr4", 34),
+                                new Token(Token.Type.OPERATOR, ",", 39),
+                                new Token(Token.Type.IDENTIFIER, "TRUE", 40),
+                                new Token(Token.Type.OPERATOR, ",", 44),
+                                new Token(Token.Type.CHARACTER, "\'c\'", 45),
+                                new Token(Token.Type.OPERATOR, ",", 49),
+                                new Token(Token.Type.DECIMAL, "1.0", 50),
+                                new Token(Token.Type.OPERATOR, ")", 53),
+                                new Token(Token.Type.OPERATOR, "]", 54),
+                                new Token(Token.Type.OPERATOR, ")", 55),
+                                new Token(Token.Type.OPERATOR, ")", 56)
+                        ),
+                        new Ast.Expression.Group(new Ast.Expression.Function("func", Arrays.asList(
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2"),
+                                new Ast.Expression.Access(
+                                        Optional.of(new Ast.Expression.Function("func2", Arrays.asList(
+                                                new Ast.Expression.Literal(null),
+                                                new Ast.Expression.Access(Optional.empty(), "expr4"),
+                                                new Ast.Expression.Literal(Boolean.TRUE),
+                                                new Ast.Expression.Literal('c'),
+                                                new Ast.Expression.Literal(BigDecimal.valueOf(1.0))
+                                        ))), "expr3")
+                        ))))
+                ,
                 Arguments.of("Missing Closing Parenthesis",
                         Arrays.asList(
                                 //(expr
@@ -375,12 +435,12 @@ final class ParserExpressionTests {
 
     private static Stream<Arguments> testExpressionExceptions() {
         return Stream.of(
-                Arguments.of( Arrays.asList(
+                Arguments.of( "Illegal Binary Subtraction", Arrays.asList(
                                 //expr -
                                 new Token(Token.Type.IDENTIFIER, "expr", 0),
                                 new Token(Token.Type.OPERATOR, "-", 5)
                         ), 6),
-                Arguments.of( Arrays.asList(
+                Arguments.of( "Illegal function declaration, hanging comma", Arrays.asList(
                         //expr -
                         new Token(Token.Type.IDENTIFIER, "name", 0),
                         new Token(Token.Type.OPERATOR, "(", 5),
@@ -388,21 +448,72 @@ final class ParserExpressionTests {
                         new Token(Token.Type.OPERATOR, ",", 10),
                         new Token(Token.Type.OPERATOR, ")", 11)
                 ), 11),
-                Arguments.of( Arrays.asList(
+                Arguments.of( "Illegal Operator at start of expression", Arrays.asList(
                         //expr -
                         new Token(Token.Type.OPERATOR, "?", 0)
                 ), 0),
-                Arguments.of( Arrays.asList(
+                Arguments.of("Illegal end of function parenthesis", Arrays.asList(
                         //expr -
                         new Token(Token.Type.IDENTIFIER, "name", 0),
                         new Token(Token.Type.OPERATOR, "(", 4),
                         new Token(Token.Type.IDENTIFIER, "expr", 5)),9),
-                Arguments.of( Arrays.asList(
+                Arguments.of( "Illegal Access operation", Arrays.asList(
                         //expr -
                         new Token(Token.Type.IDENTIFIER, "name", 0),
                         new Token(Token.Type.OPERATOR, "(", 4),
                         new Token(Token.Type.IDENTIFIER, "expr", 5),
-                        new Token(Token.Type.OPERATOR, "]", 9)),9)
+                        new Token(Token.Type.OPERATOR, "]", 9)),9),
+                Arguments.of( "Illegal end of grouping with missing parenthesis", Arrays.asList(
+                        //expr -
+                        new Token(Token.Type.OPERATOR, "(", 0),
+                        new Token(Token.Type.IDENTIFIER, "expr", 1)),5),
+                Arguments.of( "Illegal end of grouping with function inside", Arrays.asList(
+                        //expr -
+                        new Token(Token.Type.OPERATOR, "(", 0),
+                        new Token(Token.Type.IDENTIFIER, "func", 1),
+                        new Token(Token.Type.OPERATOR, "(", 5),
+                        new Token(Token.Type.IDENTIFIER, "expr1", 6),
+                        new Token(Token.Type.OPERATOR, ",", 11),
+                        new Token(Token.Type.IDENTIFIER, "expr2", 12),
+                        new Token(Token.Type.OPERATOR, ",", 17),
+                        new Token(Token.Type.IDENTIFIER, "expr3", 18),
+                        new Token(Token.Type.OPERATOR, ")", 23)),24),
+                Arguments.of( "Illegal end of grouping with ] operator",  Arrays.asList(
+                        //expr -
+                        new Token(Token.Type.OPERATOR, "(", 0),
+                        new Token(Token.Type.IDENTIFIER, "func", 1),
+                        new Token(Token.Type.OPERATOR, "(", 5),
+                        new Token(Token.Type.IDENTIFIER, "expr1", 6),
+                        new Token(Token.Type.OPERATOR, ",", 11),
+                        new Token(Token.Type.IDENTIFIER, "expr2", 12),
+                        new Token(Token.Type.OPERATOR, ",", 17),
+                        new Token(Token.Type.IDENTIFIER, "expr3", 18),
+                        new Token(Token.Type.OPERATOR, ")", 23),
+                        new Token(Token.Type.OPERATOR, "]", 29)),29),
+                Arguments.of("Missing Comma in the access operation: (func(expr1,expr2,expr3[func2(NIL, expr4, True \'c\' , 1.0)]))", Arrays.asList(
+                    new Token(Token.Type.OPERATOR, "(", 0),
+                    new Token(Token.Type.IDENTIFIER, "func", 1),
+                    new Token(Token.Type.OPERATOR, "(", 5),
+                    new Token(Token.Type.IDENTIFIER, "expr1", 6),
+                    new Token(Token.Type.OPERATOR, ",", 11),
+                    new Token(Token.Type.IDENTIFIER, "expr2", 12),
+                    new Token(Token.Type.OPERATOR, ",", 17),
+                    new Token(Token.Type.IDENTIFIER, "expr3", 18),
+                    new Token(Token.Type.OPERATOR, "[", 23),
+                    new Token(Token.Type.IDENTIFIER, "func2", 24),
+                    new Token(Token.Type.OPERATOR, "(", 29),
+                    new Token(Token.Type.IDENTIFIER, "NIL", 30),
+                    new Token(Token.Type.OPERATOR, ",", 33),
+                    new Token(Token.Type.IDENTIFIER, "expr4", 34),
+                    new Token(Token.Type.OPERATOR, ",", 39),
+                    new Token(Token.Type.IDENTIFIER, "TRUE", 40),
+                    new Token(Token.Type.CHARACTER, "\'c\'", 45),
+                    new Token(Token.Type.OPERATOR, ",", 49),
+                    new Token(Token.Type.DECIMAL, "1.0", 50),
+                    new Token(Token.Type.OPERATOR, ")", 53),
+                    new Token(Token.Type.OPERATOR, "]", 54),
+                    new Token(Token.Type.OPERATOR, ")", 55),
+                    new Token(Token.Type.OPERATOR, ")", 56)),45)
         );
     }
 
@@ -413,7 +524,7 @@ final class ParserExpressionTests {
     }
     @ParameterizedTest
     @MethodSource
-    void testExpressionExceptions(List<Token> tokens, int index) {
+    void testExpressionExceptions(String test, List<Token> tokens, int index) {
         testExpressions(tokens, index);
     }
 
