@@ -8,6 +8,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -63,6 +64,26 @@ final class ParserTests {
                                 Arrays.asList(new Ast.Function("name", Arrays.asList(), Arrays.asList(
                                         new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt"))
                                 )))
+                        )
+                ),
+                Arguments.of("List",
+                        Arrays.asList(
+                                //FUN name() DO stmt; END
+                                new Token(Token.Type.IDENTIFIER, "LIST", 0),
+                                new Token(Token.Type.IDENTIFIER, "name", 4),
+                                new Token(Token.Type.OPERATOR, "=", 8),
+                                new Token(Token.Type.OPERATOR, "[", 9),
+                                new Token(Token.Type.IDENTIFIER, "NIL", 11),
+                                new Token(Token.Type.OPERATOR, ",", 14),
+                                new Token(Token.Type.DECIMAL, "5.0", 18),
+                                new Token(Token.Type.OPERATOR, "]", 18),
+                                new Token(Token.Type.OPERATOR, ";", 20)
+                        ),
+                        new Ast.Source(
+                                Arrays.asList(new Ast.Global("name", true, Optional.of(new Ast.Expression.PlcList(Arrays.asList(
+                                        new Ast.Expression.Literal(null), new Ast.Expression.Literal(BigDecimal.valueOf(5.0))
+                                ))))),
+                                Arrays.asList()
                         )
                 )
         );

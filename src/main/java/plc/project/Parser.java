@@ -40,13 +40,20 @@ public final class Parser {
         while(tokens.has(0))
         {
             if(peek("LIST") || peek("VAR") || peek("VAL"))
+            {
                 globals.add(parseGlobal());
+                if(!match(";"))
+                {
+                    throwError("Illegal end of global variable");
+                    return null;
+                }
+            }
             else break;
         }
         //Then read in all the Function Objects
         while(tokens.has(0))
         {
-            if(peek("FUN"))
+            if(match("FUN"))
                 functions.add(parseFunction());
             //Should only be functions or globals, if not then throw error
             else {
@@ -62,7 +69,7 @@ public final class Parser {
      * next tokens start a global, aka {@code LIST|VAL|VAR}.
      */
     public Ast.Global parseGlobal() throws ParseException {
-        if(match("List"))
+        if(match("LIST"))
         {
             return parseList();
         }
@@ -82,23 +89,21 @@ public final class Parser {
      * next token declares a list, aka {@code LIST}.
      */
     public Ast.Global parseList() throws ParseException {
-        //List<Ast.Expression> expressions = new ArrayList<>();
-        Ast.Expression expression;
+        List<Ast.Expression> expressions = new ArrayList<>();
         if(match(Token.Type.IDENTIFIER, "=" ,"["))
         {
             String name = tokens.get(-3).getLiteral(); // -3 to get Identifier
-            expression = parseExpression();
-            //Need to Figure out how to add more expressions to the list
-            /*while(match(",") && tokens.has(0))
+            expressions.add(parseExpression());
+            while(match(",") && tokens.has(0))
             {
                 expressions.add(parseExpression());
-            }*/
+            }
             if(!match("]"))
             {
                 throwError("Illegal end of list");
                 return null;
             }
-            else return new Ast.Global(name, true, Optional.of(expression));
+            else return new Ast.Global(name, true, Optional.of(new Ast.Expression.PlcList(expressions)));
         }
         else {
             throwError("Illegal token as list Identifier");
