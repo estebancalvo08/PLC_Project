@@ -32,7 +32,27 @@ public final class Parser {
      * Parses the {@code source} rule.
      */
     public Ast.Source parseSource() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        List<Ast.Global> globals = new ArrayList<>();
+        List<Ast.Function> functions = new ArrayList<>();
+        //Read in all the Global Objects first
+        while(tokens.has(0))
+        {
+            if(peek("LIST") || peek("VAR") || peek("VAL"))
+                globals.add(parseGlobal());
+            else break;
+        }
+        //Then read in all the Function Objects
+        while(tokens.has(0))
+        {
+            if(peek("FUN"))
+                functions.add(parseFunction());
+            //Should only be functions or globals, if not then throw error
+            else {
+                throwError("Illegal Function or Global Declaration");
+                return null;
+            }
+        }
+        return new Ast.Source(globals, functions);
     }
 
     /**
@@ -40,7 +60,19 @@ public final class Parser {
      * next tokens start a global, aka {@code LIST|VAL|VAR}.
      */
     public Ast.Global parseGlobal() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        if(match("List"))
+        {
+            return parseList();
+        }
+        else if(match("VAR"))
+        {
+            return parseMutable();
+        }
+        else if(match("VAL"))
+        {
+            return parseImmutable();
+        }
+        return null;
     }
 
     /**
@@ -48,7 +80,28 @@ public final class Parser {
      * next token declares a list, aka {@code LIST}.
      */
     public Ast.Global parseList() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //List<Ast.Expression> expressions = new ArrayList<>();
+        Ast.Expression expression;
+        if(match(Token.Type.IDENTIFIER, "=" ,"["))
+        {
+            String name = tokens.get(-3).getLiteral(); // -3 to get Identifier
+            expression = parseExpression();
+            //Need to Figure out how to add more expressions to the list
+            /*while(match(",") && tokens.has(0))
+            {
+                expressions.add(parseExpression());
+            }*/
+            if(!match("]"))
+            {
+                throwError("Illegal end of list");
+                return null;
+            }
+            else return new Ast.Global(name, true, Optional.of(expression));
+        }
+        else {
+            throwError("Illegal token as list Identifier");
+            return null;
+        }
     }
 
     /**
