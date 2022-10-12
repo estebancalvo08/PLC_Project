@@ -100,9 +100,9 @@ final class ParserTests {
                 Arguments.of("Definition",
                         Arrays.asList(
                                 //LET name;
-                                new Token(Token.Type.IDENTIFIER, "LET", -1),
-                                new Token(Token.Type.IDENTIFIER, "name", -1),
-                                new Token(Token.Type.OPERATOR, ";", -1)
+                                new Token(Token.Type.IDENTIFIER, "LET", 0),
+                                new Token(Token.Type.IDENTIFIER, "name", 4),
+                                new Token(Token.Type.OPERATOR, ";", 8)
                         ),
                         new Ast.Statement.Declaration("name", Optional.empty())
                 ),
@@ -153,7 +153,7 @@ final class ParserTests {
 
     private static Stream<Arguments> testIfStatement() {
         return Stream.of(
-                Arguments.of("If",
+                Arguments.of("IF",
                         Arrays.asList(
                                 //IF expr DO stmt; END
                                 new Token(Token.Type.IDENTIFIER, "IF", 0),
@@ -188,6 +188,7 @@ final class ParserTests {
                                 Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt2")))
                         )
                 )
+
         );
     }
 
