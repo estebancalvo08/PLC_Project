@@ -134,6 +134,10 @@ final class ParserExpressionTests {
                         Arrays.asList(new Token(Token.Type.IDENTIFIER, "TRUE", 0)),
                         new Ast.Expression.Literal(Boolean.TRUE)
                 ),
+                Arguments.of("Escape Character",
+                        Arrays.asList(new Token(Token.Type.CHARACTER, "'\\b'", 0)),
+                        new Ast.Expression.Literal('\b')
+                ),
                 Arguments.of("Integer Literal",
                         Arrays.asList(new Token(Token.Type.INTEGER, "1", 0)),
                         new Ast.Expression.Literal(new BigInteger("1"))
@@ -145,6 +149,10 @@ final class ParserExpressionTests {
                 Arguments.of("Character Literal",
                         Arrays.asList(new Token(Token.Type.CHARACTER, "'c'", 0)),
                         new Ast.Expression.Literal('c')
+                ),
+                Arguments.of("Character Literal",
+                        Arrays.asList(new Token(Token.Type.CHARACTER, "'\\''", 0)),
+                        new Ast.Expression.Literal('\'')
                 ),
                 Arguments.of("String Literal",
                         Arrays.asList(new Token(Token.Type.STRING, "\"string\"", 0)),

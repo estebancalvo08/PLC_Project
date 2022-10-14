@@ -460,17 +460,15 @@ public final class Parser {
         else if(match(Token.Type.CHARACTER))
         {
             String toReturn = tokens.get(-1).getLiteral();
-            toReturn = toReturn.replace("'", "");
+            toReturn = toReturn.substring(1,toReturn.length() - 1);
+            toReturn = escapeChars(toReturn);
             return new Ast.Expression.Literal(new Character(toReturn.charAt(0)));
         }
         else if(match(Token.Type.STRING))
         {
             String toReturn = tokens.get(-1).getLiteral();
-            toReturn = toReturn.replace("\"", "");
-            toReturn = toReturn.replaceAll("\\\\b", "\b");
-            toReturn = toReturn.replaceAll("\\\\n", "\n");
-            toReturn = toReturn.replaceAll("\\\\r", "\r");
-            toReturn = toReturn.replaceAll("\\\\t", "\t");
+            toReturn = toReturn.substring(1, toReturn.length() - 1);
+            toReturn = escapeChars(toReturn);
             return new Ast.Expression.Literal(new String(toReturn));
         }
         else if(match("("))
@@ -514,6 +512,16 @@ public final class Parser {
         if(tokens.has(0))
             throw new ParseException(error, tokens.get(0).getIndex());
         else throw new ParseException(error, tokens.get(-1).getIndex() + tokens.get(-1).getLiteral().length());
+    }
+    private String escapeChars(String toReturn)
+    {
+        toReturn = toReturn.replace("\\'", "'");
+        toReturn = toReturn.replace("\\\"", "\"");
+        toReturn = toReturn.replace("\\b", "\b");
+        toReturn = toReturn.replace("\\n", "\n");
+        toReturn = toReturn.replace("\\r", "\r");
+        toReturn = toReturn.replace("\\t", "\t");
+        return toReturn;
     }
 
 
