@@ -252,6 +252,17 @@ final class ParserTests {
 
     private static Stream<Arguments> testWhileStatement() {
         return Stream.of(
+                Arguments.of("Missing END",
+                        Arrays.asList(
+                                //WHILE expr DO stmt; END
+                                new Token(Token.Type.IDENTIFIER, "WHILE", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr", 6),
+                                new Token(Token.Type.IDENTIFIER, "DO", 11),
+                                new Token(Token.Type.IDENTIFIER, "stmt", 14),
+                                new Token(Token.Type.OPERATOR, ";", 18)
+                        ),
+                        null
+                ),
                 Arguments.of("While",
                         Arrays.asList(
                                 //WHILE expr DO stmt; END

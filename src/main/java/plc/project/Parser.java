@@ -117,7 +117,7 @@ public final class Parser {
      */
     public Ast.Global parseMutable() throws ParseException {
         if (!match(Token.Type.IDENTIFIER)) {
-            throw new ParseException("Token is not an Identifier", tokens.get(-1).getIndex());
+            throwError("Token is not an Identifier");
         }
         String name = tokens.get(-1).getLiteral();
         if (peek("=")) {
@@ -134,11 +134,11 @@ public final class Parser {
      */
     public Ast.Global parseImmutable() throws ParseException {
         if (!match(Token.Type.IDENTIFIER)) {
-            throw new ParseException("Token is not an Identifier", tokens.get(-1).getIndex());
+            throwError("Token is not an Identifier");
         }
         String name = tokens.get(-1).getLiteral();
         if (!match("=")) {
-            throw new ParseException("Missing =", tokens.get(-1).getIndex());
+            throwError("Missing =");
         }
         Optional<Ast.Expression> value = Optional.of(parseExpression());
         return new Ast.Global(name, false, value);
@@ -150,46 +150,38 @@ public final class Parser {
      */
     public Ast.Function parseFunction() throws ParseException {
         if (!match(Token.Type.IDENTIFIER)) {
-            throw new ParseException("Token should be an Identifier", tokens.get(-1).getIndex());
+            throwError("Token should be an Identifier");
         }
         String name = tokens.get(-1).getLiteral();
         if (!match("(")) {
-            throw new ParseException("Missing (", tokens.get(-1).getIndex());
+            throwError("Missing (");
         }
-        //ex: func(), after the (, checks for the parameters.
+
         List<String> parameters = new ArrayList<>();
         List<Ast.Statement> statements = new ArrayList<>();
+
+        //ex: func(), after the (, checks for the parameters.
         if (peek(Token.Type.IDENTIFIER)) {
             match(Token.Type.IDENTIFIER);
-            //checks for more than 1 parameter
             parameters.add(tokens.get(-1).getLiteral());
+            //checks for more than 1 parameter
             while(peek(",")) {
-
+                match(",");
+                if (!match(Token.Type.IDENTIFIER)) {
+                    throwError("Missing Identifier");
+                }
+                parameters.add(tokens.get(-1).getLiteral());
             }
-            //if after one parameter, there isn't ) ex trailing comma, throw error
-            if (!match(")")) {
-                throw new ParseException("Missing )", tokens.get(-1).getIndex());
-            }
-            //if closing ) then check for "DO"
-            if (!match("DO")) {
-                throw new ParseException("Missing DO", tokens.get(-1).getIndex());
-            }
-            statements = parseBlock();
-            if (!match("END")) {
-                throw new ParseException("Missing END", tokens.get(-1).getIndex());
-            }
-            return new Ast.Function(name, parameters, statements);
         }
-        //if there are no parameters... check for ) and then check for DO and add statements
         if (!match(")")) {
-            throw new ParseException("Missing )", tokens.get(-1).getIndex());
+            throwError("Missing )");
         }
         if (!match("DO")) {
-            throw new ParseException("Missing DO", tokens.get(-1).getIndex());
+            throwError("Missing DO");
         }
         statements = parseBlock();
         if (!match("END")) {
-            throw new ParseException("Missing END", tokens.get(-1).getIndex());
+            throwError("Missing END");
         }
         return new Ast.Function(name, parameters, statements);
     }
@@ -199,10 +191,13 @@ public final class Parser {
      * preceding token indicates the opening a block.
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
-        //idk if this works ;(
         List<Ast.Statement> exprs = new ArrayList<>();
-        //while (peek(Token.Type.IDENTIFIER)) {
+        /*
         while (!peek("END") && !peek("ELSE") && !peek("DEFAULT")) {
+            exprs.add(parseStatement());
+        }
+        */
+        while(tokens.has(0) && !peek("END") && !peek("ELSE") && !peek("DEFAULT")){
             exprs.add(parseStatement());
         }
         return exprs;
@@ -245,19 +240,19 @@ public final class Parser {
     public Ast.Statement.Declaration parseDeclarationStatement() throws ParseException {
         //guard clause, if token after LET isn't an identifier, throw an error
         if (!match(Token.Type.IDENTIFIER)) {
-            throw new ParseException("Declaration name is not an identifier", tokens.get(-1).getIndex());
+            throwError("Declaration name is not an identifier");
         }
         String varName = tokens.get(-1).getLiteral();
         //after the var name, if it isn't a semicolon then it is an initialization..., else it is a declaration
         if (!match(";")){
             //if next token isn't =, then throw error
             if (!match("=")) {
-                throw new ParseException("Missing =", tokens.get(-1).getIndex());
+                throwError("Missing =");
             }
             else {
                 Optional<Ast.Expression> expr = Optional.of(parseExpression());
                 if (!match(";")) {
-                    throw new ParseException("Missing ;", tokens.get(-1).getIndex());
+                    throwError("Missing ;");
                 }
                 return new Ast.Statement.Declaration(varName, expr);
             }
@@ -265,6 +260,7 @@ public final class Parser {
         else {
             return new Ast.Statement.Declaration(varName, Optional.empty());
         }
+        return null;
     }
 
     /**
@@ -275,21 +271,21 @@ public final class Parser {
     public Ast.Statement.If parseIfStatement() throws ParseException {
         Ast.Expression condition = parseExpression();
         if (!match("DO")) {
-            throw new ParseException("Missing DO", tokens.get(-1).getIndex());
+            throwError("Missing DO");
         }
         List<Ast.Statement> thenStatements = parseBlock();
         List<Ast.Statement> elseStatements = new ArrayList<>();
         // if there is no else statement thing...
         if (!match("ELSE")) {
             if (!match("END")) {
-                throw new ParseException("Expected END", tokens.get(-1).getIndex());
+                throwError("Expected END");
             }
             return new Ast.Statement.If(condition, thenStatements, elseStatements);
         }
         // if there is an else statement
         elseStatements = parseBlock();
         if (!match("END")) {
-            throw new ParseException("Expected END", tokens.get(-1).getIndex());
+            throwError("Expected END");
         }
         return new Ast.Statement.If(condition, thenStatements, elseStatements);
     }
@@ -307,7 +303,7 @@ public final class Parser {
             cases.add(parseCaseStatement());
         }
         if (!peek("DEFAULT")) {
-            throw new ParseException("No DEFAULT Case", tokens.get(-1).getIndex());
+            throwError("No DEFAULT Case");
         }
         cases.add(parseCaseStatement());
         return new Ast.Statement.Switch(condition, cases);
@@ -323,7 +319,7 @@ public final class Parser {
         if (match("CASE")) {
             Optional<Ast.Expression> value = Optional.of(parseExpression());
             if (!match(":")) {
-                throw new ParseException("No :", tokens.get(-1).getIndex());
+                throwError("No :");
             }
             statements = parseBlock();
             return new Ast.Statement.Case(value, statements);
@@ -341,11 +337,11 @@ public final class Parser {
     public Ast.Statement.While parseWhileStatement() throws ParseException {
         Ast.Expression condition = parseExpression();
         if (!match("DO")) {
-            throw new ParseException("Missing DO", tokens.get(-1).getIndex());
+            throwError("Missing DO");
         }
         List<Ast.Statement> statements = parseBlock();
         if (!match("END")) {
-            throw new ParseException("Expected END", tokens.get(-1).getIndex());
+            throwError("Missing END");
         }
         return new Ast.Statement.While(condition, statements);
     }
@@ -358,7 +354,7 @@ public final class Parser {
     public Ast.Statement.Return parseReturnStatement() throws ParseException {
         Ast.Expression expr = parseExpression();
         if (!match(";")) {
-            throw new ParseException("Missing ;", tokens.get(-1).getIndex());
+            throwError("Missing ;");
         }
         return new Ast.Statement.Return(expr);
     }
