@@ -55,7 +55,7 @@ public final class Parser {
         {
             if(match("FUN"))
                 functions.add(parseFunction());
-            //Should only be functions or globals, if not then throw error
+                //Should only be functions or globals, if not then throw error
             else {
                 throwError("Illegal Function or Global Declaration");
                 return null;
@@ -192,11 +192,6 @@ public final class Parser {
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
         List<Ast.Statement> exprs = new ArrayList<>();
-        /*
-        while (!peek("END") && !peek("ELSE") && !peek("DEFAULT")) {
-            exprs.add(parseStatement());
-        }
-        */
         while(tokens.has(0) && !peek("END") && !peek("ELSE") && !peek("DEFAULT")){
             exprs.add(parseStatement());
         }
@@ -209,27 +204,27 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Statement parseStatement() throws ParseException {
-            if (match("LET")) {
-                return parseDeclarationStatement();
-            } else if (match("SWITCH")) {
-                return parseSwitchStatement();
-            } else if (match("IF")) {
-                return parseIfStatement();
-            } else if (match("WHILE")) {
-                return parseWhileStatement();
-            } else if (match("RETURN")) {
-                return parseReturnStatement();
-            } else {
-                Ast.Expression left = parseExpression();
-                if (match("=")) {
-                    Ast.Expression right = parseExpression();
-                    if (match(";")) return new Ast.Statement.Assignment(left, right);
-                    else throwError("Illegal Assignment statement");
-                }
-                if (match(";")) return new Ast.Statement.Expression(left);
+        if (match("LET")) {
+            return parseDeclarationStatement();
+        } else if (match("SWITCH")) {
+            return parseSwitchStatement();
+        } else if (match("IF")) {
+            return parseIfStatement();
+        } else if (match("WHILE")) {
+            return parseWhileStatement();
+        } else if (match("RETURN")) {
+            return parseReturnStatement();
+        } else {
+            Ast.Expression left = parseExpression();
+            if (match("=")) {
+                Ast.Expression right = parseExpression();
+                if (match(";")) return new Ast.Statement.Assignment(left, right);
                 else throwError("Illegal Assignment statement");
             }
-            return null;
+            if (match(";")) return new Ast.Statement.Expression(left);
+            else throwError("Illegal Assignment statement");
+        }
+        return null;
     }
 
     /**
@@ -299,19 +294,19 @@ public final class Parser {
         Ast.Expression condition = parseExpression();
         List<Ast.Statement.Case> cases = new ArrayList<>();
         while (peek("CASE")) {
-            //match("CASE");
             cases.add(parseCaseStatement());
         }
         if (!peek("DEFAULT")) {
             throwError("No DEFAULT Case");
+            return null;
         }
         cases.add(parseCaseStatement());
         return new Ast.Statement.Switch(condition, cases);
     }
 
     /**
-     * Parses a case or default statement block from the {@code switch} rule. 
-     * This method should only be called if the next tokens start the case or 
+     * Parses a case or default statement block from the {@code switch} rule.
+     * This method should only be called if the next tokens start the case or
      * default block of a switch statement, aka {@code CASE} or {@code DEFAULT}.
      */
     public Ast.Statement.Case parseCaseStatement() throws ParseException {
@@ -325,6 +320,7 @@ public final class Parser {
             return new Ast.Statement.Case(value, statements);
         }
         //this is default
+        match("DEFAULT");
         statements = parseBlock();
         return new Ast.Statement.Case(Optional.empty(), statements);
     }
@@ -448,7 +444,7 @@ public final class Parser {
             return new Ast.Expression.Literal(false);
         else if(match("NIL"))
             return new Ast.Expression.Literal(null);
-        //Because the match advances the index by 1, want to get(-1) to go back to token that was read
+            //Because the match advances the index by 1, want to get(-1) to go back to token that was read
         else if(match(Token.Type.INTEGER))
             return new Ast.Expression.Literal(new BigInteger(tokens.get(-1).getLiteral()));
         else if(match(Token.Type.DECIMAL))
