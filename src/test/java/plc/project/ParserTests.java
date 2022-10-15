@@ -77,7 +77,7 @@ final class ParserTests {
                                                 Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt1")))),
                                         new Ast.Statement.Case(Optional.empty(), Arrays.asList(
                                                 new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt2"))
-                        ))))));
+                                        ))))));
     }
 
     @ParameterizedTest
@@ -648,28 +648,28 @@ final class ParserTests {
         Ast.Source expected = new Ast.Source(
                 Arrays.asList(new Ast.Global("first", true, Optional.of(new Ast.Expression.Literal(BigInteger.ONE)))),
                 Arrays.asList(new Ast.Function("main", Arrays.asList(), Arrays.asList(
-                        new Ast.Statement.While(
-                                new Ast.Expression.Binary("!=",
-                                        new Ast.Expression.Access(Optional.empty(), "first"),
-                                        new Ast.Expression.Literal(BigInteger.TEN)
-                                ),
-                                Arrays.asList(
-                                        new Ast.Statement.Expression(
-                                                new Ast.Expression.Function("print", Arrays.asList(
-                                                        new Ast.Expression.Access(Optional.empty(), "first"))
-                                                )
-                                        ),
-                                        new Ast.Statement.Assignment(
+                                new Ast.Statement.While(
+                                        new Ast.Expression.Binary("!=",
                                                 new Ast.Expression.Access(Optional.empty(), "first"),
-                                                new Ast.Expression.Binary("+",
+                                                new Ast.Expression.Literal(BigInteger.TEN)
+                                        ),
+                                        Arrays.asList(
+                                                new Ast.Statement.Expression(
+                                                        new Ast.Expression.Function("print", Arrays.asList(
+                                                                new Ast.Expression.Access(Optional.empty(), "first"))
+                                                        )
+                                                ),
+                                                new Ast.Statement.Assignment(
                                                         new Ast.Expression.Access(Optional.empty(), "first"),
-                                                        new Ast.Expression.Literal(BigInteger.ONE)
+                                                        new Ast.Expression.Binary("+",
+                                                                new Ast.Expression.Access(Optional.empty(), "first"),
+                                                                new Ast.Expression.Literal(BigInteger.ONE)
+                                                        )
                                                 )
                                         )
                                 )
-                        )
-                ))
-        ));
+                        ))
+                ));
         test(input, expected, Parser::parseSource);
     }
 

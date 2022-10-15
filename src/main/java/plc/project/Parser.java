@@ -55,7 +55,7 @@ public final class Parser {
         {
             if(match("FUN"))
                 functions.add(parseFunction());
-                //Should only be functions or globals, if not then throw error
+            //Should only be functions or globals, if not then throw error
             else {
                 throwError("Illegal Function or Global Declaration");
                 return null;
@@ -118,6 +118,7 @@ public final class Parser {
     public Ast.Global parseMutable() throws ParseException {
         if (!match(Token.Type.IDENTIFIER)) {
             throwError("Token is not an Identifier");
+            return null;
         }
         String name = tokens.get(-1).getLiteral();
         if (peek("=")) {
@@ -135,10 +136,12 @@ public final class Parser {
     public Ast.Global parseImmutable() throws ParseException {
         if (!match(Token.Type.IDENTIFIER)) {
             throwError("Token is not an Identifier");
+            return null;
         }
         String name = tokens.get(-1).getLiteral();
         if (!match("=")) {
             throwError("Missing =");
+            return null;
         }
         Optional<Ast.Expression> value = Optional.of(parseExpression());
         return new Ast.Global(name, false, value);
@@ -151,10 +154,12 @@ public final class Parser {
     public Ast.Function parseFunction() throws ParseException {
         if (!match(Token.Type.IDENTIFIER)) {
             throwError("Token should be an Identifier");
+            return null;
         }
         String name = tokens.get(-1).getLiteral();
         if (!match("(")) {
             throwError("Missing (");
+            return null;
         }
 
         List<String> parameters = new ArrayList<>();
@@ -169,19 +174,23 @@ public final class Parser {
                 match(",");
                 if (!match(Token.Type.IDENTIFIER)) {
                     throwError("Missing Identifier");
+                    return null;
                 }
                 parameters.add(tokens.get(-1).getLiteral());
             }
         }
         if (!match(")")) {
             throwError("Missing )");
+            return null;
         }
         if (!match("DO")) {
             throwError("Missing DO");
+            return null;
         }
         statements = parseBlock();
         if (!match("END")) {
             throwError("Missing END");
+            return null;
         }
         return new Ast.Function(name, parameters, statements);
     }
@@ -192,6 +201,11 @@ public final class Parser {
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
         List<Ast.Statement> exprs = new ArrayList<>();
+        /*
+        while (!peek("END") && !peek("ELSE") && !peek("DEFAULT")) {
+            exprs.add(parseStatement());
+        }
+        */
         while(tokens.has(0) && !peek("END") && !peek("ELSE") && !peek("DEFAULT")){
             exprs.add(parseStatement());
         }
@@ -204,27 +218,36 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Statement parseStatement() throws ParseException {
-        if (match("LET")) {
-            return parseDeclarationStatement();
-        } else if (match("SWITCH")) {
-            return parseSwitchStatement();
-        } else if (match("IF")) {
-            return parseIfStatement();
-        } else if (match("WHILE")) {
-            return parseWhileStatement();
-        } else if (match("RETURN")) {
-            return parseReturnStatement();
-        } else {
-            Ast.Expression left = parseExpression();
-            if (match("=")) {
-                Ast.Expression right = parseExpression();
-                if (match(";")) return new Ast.Statement.Assignment(left, right);
-                else throwError("Illegal Assignment statement");
+            if (match("LET")) {
+                return parseDeclarationStatement();
+            } else if (match("SWITCH")) {
+                return parseSwitchStatement();
+            } else if (match("IF")) {
+                return parseIfStatement();
+            } else if (match("WHILE")) {
+                return parseWhileStatement();
+            } else if (match("RETURN")) {
+                return parseReturnStatement();
+            } else {
+                Ast.Expression left = parseExpression();
+                if (match("=")) {
+                    Ast.Expression right = parseExpression();
+                    if (match(";")) {
+                        return new Ast.Statement.Assignment(left, right);
+                    }
+                    else {
+                        throwError("Illegal Assignment statement");
+                        return null;
+                    }
+                }
+                if (match(";")) {
+                    return new Ast.Statement.Expression(left);
+                }
+                else {
+                    throwError("Illegal Assignment statement");
+                }
             }
-            if (match(";")) return new Ast.Statement.Expression(left);
-            else throwError("Illegal Assignment statement");
-        }
-        return null;
+            return null;
     }
 
     /**
@@ -236,6 +259,7 @@ public final class Parser {
         //guard clause, if token after LET isn't an identifier, throw an error
         if (!match(Token.Type.IDENTIFIER)) {
             throwError("Declaration name is not an identifier");
+            return null;
         }
         String varName = tokens.get(-1).getLiteral();
         //after the var name, if it isn't a semicolon then it is an initialization..., else it is a declaration
@@ -267,6 +291,7 @@ public final class Parser {
         Ast.Expression condition = parseExpression();
         if (!match("DO")) {
             throwError("Missing DO");
+            return null;
         }
         List<Ast.Statement> thenStatements = parseBlock();
         List<Ast.Statement> elseStatements = new ArrayList<>();
@@ -274,6 +299,7 @@ public final class Parser {
         if (!match("ELSE")) {
             if (!match("END")) {
                 throwError("Expected END");
+                return null;
             }
             return new Ast.Statement.If(condition, thenStatements, elseStatements);
         }
@@ -281,6 +307,7 @@ public final class Parser {
         elseStatements = parseBlock();
         if (!match("END")) {
             throwError("Expected END");
+            return null;
         }
         return new Ast.Statement.If(condition, thenStatements, elseStatements);
     }
@@ -293,7 +320,9 @@ public final class Parser {
     public Ast.Statement.Switch parseSwitchStatement() throws ParseException {
         Ast.Expression condition = parseExpression();
         List<Ast.Statement.Case> cases = new ArrayList<>();
+
         while (peek("CASE")) {
+            //match("CASE");
             cases.add(parseCaseStatement());
         }
         if (!peek("DEFAULT")) {
@@ -305,8 +334,8 @@ public final class Parser {
     }
 
     /**
-     * Parses a case or default statement block from the {@code switch} rule.
-     * This method should only be called if the next tokens start the case or
+     * Parses a case or default statement block from the {@code switch} rule. 
+     * This method should only be called if the next tokens start the case or 
      * default block of a switch statement, aka {@code CASE} or {@code DEFAULT}.
      */
     public Ast.Statement.Case parseCaseStatement() throws ParseException {
@@ -315,6 +344,7 @@ public final class Parser {
             Optional<Ast.Expression> value = Optional.of(parseExpression());
             if (!match(":")) {
                 throwError("No :");
+                return null;
             }
             statements = parseBlock();
             return new Ast.Statement.Case(value, statements);
@@ -334,10 +364,12 @@ public final class Parser {
         Ast.Expression condition = parseExpression();
         if (!match("DO")) {
             throwError("Missing DO");
+            return null;
         }
         List<Ast.Statement> statements = parseBlock();
         if (!match("END")) {
             throwError("Missing END");
+            return null;
         }
         return new Ast.Statement.While(condition, statements);
     }
@@ -351,6 +383,7 @@ public final class Parser {
         Ast.Expression expr = parseExpression();
         if (!match(";")) {
             throwError("Missing ;");
+            return null;
         }
         return new Ast.Statement.Return(expr);
     }
@@ -359,8 +392,12 @@ public final class Parser {
      * Parses the {@code expression} rule.
      */
     public Ast.Expression parseExpression() throws ParseException {
-        if(tokens.has(0)) return parseLogicalExpression();
-        else throw new ParseException("Parse Expression contains Illegal token index", tokens.get(0).getIndex());
+        if(tokens.has(0)) {
+            return parseLogicalExpression();
+        }
+        else {
+            throw new ParseException("Parse Expression contains Illegal token index", tokens.get(0).getIndex());
+        }
     }
 
     /**
@@ -444,7 +481,7 @@ public final class Parser {
             return new Ast.Expression.Literal(false);
         else if(match("NIL"))
             return new Ast.Expression.Literal(null);
-            //Because the match advances the index by 1, want to get(-1) to go back to token that was read
+        //Because the match advances the index by 1, want to get(-1) to go back to token that was read
         else if(match(Token.Type.INTEGER))
             return new Ast.Expression.Literal(new BigInteger(tokens.get(-1).getLiteral()));
         else if(match(Token.Type.DECIMAL))
@@ -467,9 +504,12 @@ public final class Parser {
         {
 
             Ast.Expression expression = parseExpression();
-            if(match(")"))
+            if(match(")")) {
                 return new Ast.Expression.Group(expression);
-            else throwError("Illegal Grouping of Expression");
+            }
+            else {
+                throwError("Illegal Grouping of Expression");
+            }
         }
         else if(match(Token.Type.IDENTIFIER))
         {
@@ -479,15 +519,19 @@ public final class Parser {
                 while(tokens.has(0) && !peek(")"))
                 {
                     params.add(parseExpression());
-                    if(peek(",", ")")) throw new ParseException("Illegal end of function call", tokens.get(0).getIndex() + 1);
-                    if(!match(",") ) break;
+                    if(peek(",", ")")) {
+                        throw new ParseException("Illegal end of function call", tokens.get(0).getIndex() + 1);
+                    }
+                    if(!match(",")) break;
                 }
-                if(match(")"))
+                if(match(")")) {
                     return new Ast.Expression.Function(Name, params);
-                else throwError("Illegal End of Function Call");
+                }
+                else {
+                    throwError("Illegal End of Function Call");
+                }
             }
-            if(match("["))
-            {
+            if(match("[")){
                 Ast.Expression expression = parseExpression();
                 if(match("]"))
                     return new Ast.Expression.Access(Optional.of(expression), Name);
