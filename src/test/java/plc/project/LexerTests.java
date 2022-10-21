@@ -217,6 +217,58 @@ public class LexerTests {
                         new Token(Token.Type.IDENTIFIER, "@", 3),
                         new Token(Token.Type.OPERATOR, "$", 4),
                         new Token(Token.Type.OPERATOR, "%", 5)
+                )),
+
+                Arguments.of("Example 13", "-1.1.1;", Arrays.asList(
+                        new Token(Token.Type.DECIMAL, "-1.1", 0),
+                        new Token(Token.Type.OPERATOR, ".", 4),
+                        new Token(Token.Type.INTEGER, "1", 5),
+                        new Token(Token.Type.OPERATOR, ";", 6)
+                )),
+                Arguments.of("Example 14", "1 = 1", Arrays.asList(
+                        new Token(Token.Type.INTEGER, "1", 0),
+                        new Token(Token.Type.OPERATOR, "=", 2),
+                        new Token(Token.Type.INTEGER, "1", 4)
+                )),
+                Arguments.of("Example 15", "-1 = -1", Arrays.asList(
+                        new Token(Token.Type.INTEGER, "-1", 0),
+                        new Token(Token.Type.OPERATOR, "=", 3),
+                        new Token(Token.Type.INTEGER, "-1", 5)
+                )),
+                Arguments.of("Example 16", "-1 \"is negative one\"", Arrays.asList(
+                        new Token(Token.Type.INTEGER, "-1", 0),
+                        new Token(Token.Type.STRING, "\"is negative one\"", 3)
+                )),
+                Arguments.of("Example 17", "-1 != 1", Arrays.asList(
+                        new Token(Token.Type.INTEGER, "-1", 0),
+                        new Token(Token.Type.OPERATOR, "!=", 3),
+                        new Token(Token.Type.INTEGER, "1", 6)
+                )),
+                Arguments.of("Example 18", "for (x < 1)", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER, "for", 0),
+                        new Token(Token.Type.OPERATOR, "(", 4),
+                        new Token(Token.Type.IDENTIFIER, "x", 5),
+                        new Token(Token.Type.OPERATOR, "<", 7),
+                        new Token(Token.Type.INTEGER, "1", 9),
+                        new Token(Token.Type.OPERATOR, ")", 10)
+                )),
+                Arguments.of("Example 19", "0(00)", Arrays.asList(
+                        new Token(Token.Type.INTEGER, "0", 0),
+                        new Token(Token.Type.OPERATOR, "(", 1),
+                        new Token(Token.Type.INTEGER, "0", 2),
+                        new Token(Token.Type.INTEGER, "0", 3),
+                        new Token(Token.Type.OPERATOR, ")", 4)
+                )),
+                Arguments.of("Example 20", "\'a\' \" is the first letter in the alphabet\"", Arrays.asList(
+                        new Token(Token.Type.CHARACTER, "\'a\'", 0),
+                        new Token(Token.Type.STRING, "\" is the first letter in the alphabet\"", 4)
+                )),
+                Arguments.of("Example 21", "01.1", Arrays.asList(
+                        new Token(Token.Type.INTEGER, "0", 0),
+                        new Token(Token.Type.DECIMAL, "1.1", 1)
+                )),
+                Arguments.of("Example 22", "\'\\n\'", Arrays.asList(
+                        new Token(Token.Type.CHARACTER, "\'\\n\'", 0)
                 ))
         );
     }
