@@ -201,11 +201,6 @@ public final class Parser {
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
         List<Ast.Statement> exprs = new ArrayList<>();
-        /*
-        while (!peek("END") && !peek("ELSE") && !peek("DEFAULT")) {
-            exprs.add(parseStatement());
-        }
-        */
         while(tokens.has(0) && !peek("END") && !peek("ELSE") && !peek("DEFAULT")){
             exprs.add(parseStatement());
         }
@@ -551,6 +546,7 @@ public final class Parser {
     }
     private String escapeChars(String toReturn)
     {
+        toReturn = toReturn.replace("\\\\", "\\");
         toReturn = toReturn.replace("\\'", "'");
         toReturn = toReturn.replace("\\\"", "\"");
         toReturn = toReturn.replace("\\b", "\b");
