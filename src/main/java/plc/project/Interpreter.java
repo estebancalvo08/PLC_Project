@@ -34,7 +34,27 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Global ast) {
-        throw new UnsupportedOperationException(); //TODO
+        // Global variable can be either be a literal or list.
+        // if there isn't a value for the global variable to get initialized at declaration, then
+        if (!ast.getValue().isPresent()) {
+            scope.defineVariable(ast.getName(), ast.getMutable(), Environment.NIL);
+            return Environment.NIL;
+        }
+        if (ast.getValue().get() instanceof Ast.Expression.Literal) {
+            Environment.PlcObject value = Environment.create(((Ast.Expression.Literal) ast.getValue().get()).getLiteral());
+            scope.defineVariable(ast.getName(), ast.getMutable(), value);
+        }
+        else {
+            // astValues gets list of Ast.Expression.Literals but you need the Ast.Expression.Literal.getLiteral() (the actual numbers)
+            List<Ast.Expression> astValues = ((Ast.Expression.PlcList) ast.getValue().get()).getValues(); //<Ast..., Ast...>
+            List<Object> literalValues = new ArrayList<>();
+            for (Ast.Expression a : astValues) {
+                literalValues.add(((Ast.Expression.Literal) a).getLiteral());
+            }
+            Environment.PlcObject value = Environment.create(literalValues);
+            scope.defineVariable(ast.getName(), ast.getMutable(), value);
+        }
+        return Environment.NIL;
     }
 
     @Override
@@ -54,12 +74,49 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Assignment ast) {
-        throw new UnsupportedOperationException(); //TODO
+
+        // *** still need to implement for lists? ***
+        // first check if receiver is of type Ast.Expression.Access
+        if (!(ast.getReceiver() instanceof Ast.Expression.Access)) {
+            throw new RuntimeException();
+        }
+
+        //get variable name from ast
+        String name = ((Ast.Expression.Access) ast.getReceiver()).getName();
+        // if literal, else list.
+        if (ast.getValue() instanceof Ast.Expression.Literal) {
+            //lookup and set variable to value in current scope
+            // create env, with ast.value [ast.expression.literal=1...] so get literal.
+            Environment.PlcObject value = Environment.create(((Ast.Expression.Literal) ast.getValue()).getLiteral());
+            scope.lookupVariable(name).setValue(value);
+        }
+        else {
+            //i will finish later
+            /*
+            // find offset for the list to insert value into
+            Ast.Expression offset = (((Ast.Expression.Access) ast.getReceiver()).getOffset()).get();
+            //Environment.PlcObject value = Environment.create();
+
+            List<Ast.Expression> astValues = ((Ast.Expression.PlcList) ast.getValue()).getValues(); //<Ast..., Ast...>
+            List<Object> literalValues = new ArrayList<>();
+            for (Ast.Expression a : astValues) {
+                literalValues.add(((Ast.Expression.Literal) a).getLiteral());
+            }
+
+             */
+        }
+
+        return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.If ast) {
-        throw new UnsupportedOperationException(); //TODO
+
+
+        Environment.PlcObject condition = Environment.create(ast.getThenStatements());
+        //first parameter is what youre looking to validate
+
+        return Environment.NIL;
     }
 
     @Override
@@ -79,6 +136,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Return ast) {
+
         throw new UnsupportedOperationException(); //TODO
     }
 
@@ -222,7 +280,25 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Access ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //if there is offset then it is a list
+        /*
+        Environment.PlcObject returnedObject;
+        if (ast.getOffset().isPresent()) {
+            Ast.Expression offset = ast.getOffset().get();
+            Environment.PlcObject a = new as;
+            returnedObject = scope.lookupVariable(ast.getName()).getValue();
+
+            for (int i = 0; i < 10; i++) {
+            }
+            return returnedObject.indexof(offset);
+        }
+        else {
+            returnedObject = scope.lookupVariable(ast.getName()).getValue();
+        }
+        return returnedObject;
+
+         */
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -232,6 +308,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.PlcList ast) {
+        /*
         List<Ast.Expression> values = ast.getValues();
         List<Object> toReturn = new ArrayList<>();
         for(int i = 0; i < values.size(); i++) {
@@ -239,6 +316,17 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                 toReturn.add(((Ast.Expression.Literal) values.get(i)).getLiteral());
         }
         return new Environment.PlcObject(new Scope(null), toReturn);
+
+         */
+        //List<Ast.Expression.Literal> values = ((Ast.Expression.Literal) ast.getValues()).getLiteral();
+
+        List<Ast.Expression> astValues = ast.getValues(); //<Ast..., Ast...>
+        List<Object> literalValues = new ArrayList<>();
+        for (Ast.Expression a : astValues) {
+            literalValues.add(((Ast.Expression.Literal) a).getLiteral());
+        }
+        Environment.PlcObject values = Environment.create(literalValues);
+        return values;
     }
 
     /**
