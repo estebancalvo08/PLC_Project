@@ -408,7 +408,6 @@ public abstract class Ast {
     public static abstract class Expression extends Ast {
 
         public static final class Literal extends Ast.Expression {
-
             private final Object literal;
 
             public Literal(Object literal) {
