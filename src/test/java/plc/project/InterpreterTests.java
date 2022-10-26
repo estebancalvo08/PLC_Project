@@ -61,7 +61,12 @@ final class InterpreterTests {
                 // VAR name;
                 Arguments.of("Mutable", new Ast.Global("name", true, Optional.empty()), Environment.NIL.getValue()),
                 // VAL name = 1;
-                Arguments.of("Immutable", new Ast.Global("name", false, Optional.of(new Ast.Expression.Literal(BigInteger.ONE))), BigInteger.ONE)
+                Arguments.of("Immutable", new Ast.Global("name", false, Optional.of(new Ast.Expression.Literal(BigInteger.ONE))), BigInteger.ONE),
+                //List list = [1,5,10]
+                Arguments.of("List", new Ast.Global("list", true, Optional.of(new Ast.Expression.PlcList(Arrays.asList(
+                        new Ast.Expression.Literal(BigInteger.valueOf(1)), new Ast.Expression.Literal(BigInteger.valueOf(5)),  new Ast.Expression.Literal(BigInteger.valueOf(10))
+                )))), Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN))
+
         );
     }
 
@@ -100,7 +105,7 @@ final class InterpreterTests {
                 ),
                 // FUN square(x) DO RETURN x * x; END
                 Arguments.of("Arguments",
-                        new Ast.Function("main", Arrays.asList("x"), Arrays.asList(
+                        new Ast.Function("square", Arrays.asList("x"), Arrays.asList(
                                 new Ast.Statement.Return(new Ast.Expression.Binary("*",
                                         new Ast.Expression.Access(Optional.empty(), "x"),
                                         new Ast.Expression.Access(Optional.empty(), "x")
@@ -161,6 +166,7 @@ final class InterpreterTests {
         ), Environment.NIL.getValue(), scope);
         Assertions.assertEquals(BigInteger.ONE, scope.lookupVariable("variable").getValue().getValue());
     }
+
 
     @Test
     void testListAssignmentStatement() {
@@ -305,6 +311,15 @@ final class InterpreterTests {
                         BigInteger.valueOf(11)
                 )
         );
+    }
+    @Test
+    void testLogExpressionStatement()
+    {
+        Scope scope = new Scope(null);
+        test(new Ast.Expression.Function("logarithm",
+                        Arrays.asList(new Ast.Expression.Literal(BigDecimal.valueOf(Math.E)))),
+                BigDecimal.valueOf(1,0),
+                scope);
     }
 
     @ParameterizedTest
