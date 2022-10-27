@@ -1,16 +1,11 @@
-
 package plc.project;
-
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
-import javax.swing.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.MathContext;
 import java.math.RoundingMode;
-import java.security.spec.EncodedKeySpec;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
@@ -30,6 +25,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Source ast) {
+        //System.out.println("Source scope: " + scope.variables); //Todo Delete
         for(Ast.Global globals : ast.getGlobals())
             visit(globals);
         for(Ast.Function functions : ast.getFunctions())
@@ -50,9 +46,9 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     @Override
     public Environment.PlcObject visit(Ast.Function ast) {
         Scope curr = scope;
+        //System.out.println("Function scope: " + scope); //Todo Delete
         List<String> params = ast.getParameters();
-        System.out.println(ast.getStatements());
-        curr.defineFunction(ast.getName(), params.size(), args ->
+        scope.defineFunction(ast.getName(), params.size(), args ->
         {
             scope = new Scope(scope);
             for(int i = 0; i < params.size(); i++)
@@ -71,15 +67,16 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                 else
                     visit(statement);
             }
+            scope = curr.getParent();
             return Environment.NIL;
         });
-        scope = curr;
         return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Expression ast) {
-        return visit(ast.getExpression());
+         visit(ast.getExpression());
+         return Environment.NIL;
     }
 
     @Override
@@ -94,7 +91,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Assignment ast) {
-        Ast.Expression.Access receiver = requireType(Ast.Expression.Access.class, Environment.create(ast.getReceiver()));
+        //System.out.println("Assignment scope: " + scope.variables); //Todo Delete
+        Ast.Expression.Access receiver = requireType(Ast.Expression.Access.class, new Environment.PlcObject(scope, ast.getReceiver()));
         Environment.Variable var = scope.lookupVariable(receiver.getName());
         if(!var.getMutable())
             throw new RuntimeException("Illegal reassignment of const val");
@@ -120,12 +118,14 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         Boolean bool = requireType(Boolean.class, visit(ast.getCondition()));
         List<Ast.Statement> statements;
         scope = new Scope(scope);
+        //System.out.println("If scope: " + scope); //Todo Delete
         if(bool)
             statements = ast.getThenStatements();
         else
             statements = ast.getElseStatements();
         for(int i = 0; i < statements.size(); i++)
             visit(statements.get(i));
+        scope = scope.getParent();
         return Environment.NIL;
     }
 
@@ -139,6 +139,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             if(expr.equals(visit(cases.get(0).getValue().get()).getValue()))
                 break;
         }
+        scope = scope.getParent();
         return visit(cases.get(i));
     }
 
@@ -161,6 +162,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             //recursion for conditional
             visit(ast);
         }
+        scope = scope.getParent();
         return Environment.NIL;
     }
 
@@ -221,7 +223,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
         if(operator == "!=" || operator == "==")
         {
-            boolean equals = operator == "==" ? true : false;
+            Boolean equals = operator == "==" ? true : false;
             Environment.PlcObject l = visit(left);
             Environment.PlcObject r = visit(right);
             Boolean type = l.getValue().getClass().equals(r.getValue().getClass());
@@ -244,7 +246,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
         if(operator == "-" || operator == "*")
         {
-            boolean mult = operator == "*" ? true : false;
+            Boolean mult = operator == "*" ? true : false;
             Environment.PlcObject l = visit(left);
             Environment.PlcObject r = visit(right);
             requireType(l.getValue().getClass(), r);
@@ -283,6 +285,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     }
     @Override
     public Environment.PlcObject visit(Ast.Expression.Access ast) {
+        //System.out.println("Access scope: " + scope.variables); //Todo Delete
         Environment.Variable var = scope.lookupVariable(ast.getName());
         Optional optional = ast.getOffset();
         if(optional.isPresent())

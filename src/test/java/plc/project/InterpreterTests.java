@@ -51,6 +51,34 @@ final class InterpreterTests {
 
     @ParameterizedTest
     @MethodSource
+    void testScope(String test, Ast ast, Object expected) {
+        test(ast, expected, new Scope(null));
+    }
+
+    private static Stream<Arguments> testScope() {
+        return Stream.of(// FUN main() DO RETURN 0; END
+                Arguments.of("Main", new Ast.Source(
+                        Arrays.asList(), Arrays.asList(
+                                new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                        new Ast.Statement.Declaration("x",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(1)))),
+                                        new Ast.Statement.Declaration("y",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(2)))),
+                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
+                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y")))),
+                                        new Ast.Statement.If(new Ast.Expression.Literal(Boolean.TRUE),
+                                                Arrays.asList(
+                                                new Ast.Statement.Declaration("x",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(3)))),
+                                                new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "y"), new Ast.Expression.Literal(BigInteger.valueOf(4))),
+                                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
+                                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y"))))
+                                        ), Arrays.asList()),
+                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
+                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y"))))
+                                        ))
+                )), Environment.NIL.getValue())
+        );
+    }
+    @ParameterizedTest
+    @MethodSource
     void testGlobal(String test, Ast.Global ast, Object expected) {
         Scope scope = test(ast, Environment.NIL.getValue(), new Scope(null));
         Assertions.assertEquals(expected, scope.lookupVariable(ast.getName()).getValue().getValue());
@@ -439,28 +467,7 @@ final class InterpreterTests {
         test(ast, expected, new Scope(null));
     }
 
-    @ParameterizedTest
-    @MethodSource
-    void testScope(String test, Ast ast, Object expected) {
-        Scope scope = new Scope(null);
-        scope.defineFunction("function", 0, args -> Environment.create("function"));
-        test(ast, expected, scope);
-    }
 
-    private static Stream<Arguments> testScope() {
-        return Stream.of(
-                // function()
-                Arguments.of("Function",
-                        new Ast.Expression.Function("function", Arrays.asList()),
-                        "function"
-                ),
-                // print("Hello, World!")
-                Arguments.of("Print",
-                        new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("Hello, World!"))),
-                        Environment.NIL.getValue()
-                )
-        );
-    }
     private static Scope test(Ast ast, Object expected, Scope scope) {
         Interpreter interpreter = new Interpreter(scope);
         if (expected != null) {
