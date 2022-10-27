@@ -100,7 +100,7 @@ final class InterpreterTests {
                 ),
                 // FUN square(x) DO RETURN x * x; END
                 Arguments.of("Arguments",
-                        new Ast.Function("main", Arrays.asList("x"), Arrays.asList(
+                        new Ast.Function("square", Arrays.asList("x"), Arrays.asList(
                                 new Ast.Statement.Return(new Ast.Expression.Binary("*",
                                         new Ast.Expression.Access(Optional.empty(), "x"),
                                         new Ast.Expression.Access(Optional.empty(), "x")
