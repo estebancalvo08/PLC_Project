@@ -8,7 +8,7 @@ import java.util.function.Function;
 public final class Scope {
 
     private final Scope parent;
-    public final Map<String, Environment.Variable> variables = new HashMap<>();
+    private final Map<String, Environment.Variable> variables = new HashMap<>();
     private final Map<String, Environment.Function> functions = new HashMap<>();
 
     public Scope(Scope parent) {

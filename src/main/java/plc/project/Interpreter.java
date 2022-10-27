@@ -50,7 +50,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         List<String> params = ast.getParameters();
         scope.defineFunction(ast.getName(), params.size(), args ->
         {
-            scope = new Scope(scope);
+            scope = new Scope(curr);
             for(int i = 0; i < params.size(); i++)
                 scope.defineVariable(params.get(i).toString(), true, args.get(i));
             for(Ast.Statement statement: ast.getStatements())
@@ -154,13 +154,13 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     @Override
     public Environment.PlcObject visit(Ast.Statement.While ast) {
         Boolean conditional = requireType(Boolean.class, visit(ast.getCondition()));
-        if(conditional)
+        while(conditional)
         {
             List<Ast.Statement> statements = ast.getStatements();
             for(int i = 0; i < statements.size(); i++)
                 visit(statements.get(i));
             //recursion for conditional
-            visit(ast);
+            conditional = requireType(Boolean.class, visit(ast.getCondition()));
         }
         scope = scope.getParent();
         return Environment.NIL;
