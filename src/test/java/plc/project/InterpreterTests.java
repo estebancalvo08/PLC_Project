@@ -495,4 +495,31 @@ final class InterpreterTests {
         return interpreter.getScope();
     }
 
+    private static <T extends Ast> void testRuntimeException(Ast ast, Scope scope) {
+        Interpreter interpreter = new Interpreter(scope);
+        RuntimeException re = Assertions.assertThrows(RuntimeException.class, () -> interpreter.visit(ast));
+        Assertions.assertEquals(RuntimeException.class, re.getClass());
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testExceptions(String test, Ast ast) {
+        testRuntimeException(ast,new Scope(null));
+    }
+    private static Stream<Arguments> testExceptions() {
+        return Stream.of(
+                Arguments.of("Integer Decimal Subtraction",
+                                //name()
+                                new Ast.Expression.Binary("-", new Ast.Expression.Literal(BigInteger.valueOf(1)), new Ast.Expression.Literal(BigDecimal.valueOf(1.0)))),
+                Arguments.of("Redefined Global",
+                        //name()
+                       new Ast.Source(Arrays.asList(
+                               new Ast.Global("name", true, Optional.empty()),
+                               new Ast.Global("name", true, Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(1))))), Arrays.asList())),
+                Arguments.of("While with strings",
+                        //name()
+                        new Ast.Statement.While(new Ast.Expression.Literal("false"), Arrays.asList()))
+        );
+    }
+
 }
