@@ -61,12 +61,7 @@ final class InterpreterTests {
                 // VAR name;
                 Arguments.of("Mutable", new Ast.Global("name", true, Optional.empty()), Environment.NIL.getValue()),
                 // VAL name = 1;
-                Arguments.of("Immutable", new Ast.Global("name", false, Optional.of(new Ast.Expression.Literal(BigInteger.ONE))), BigInteger.ONE),
-                //List list = [1,5,10]
-                Arguments.of("List", new Ast.Global("list", true, Optional.of(new Ast.Expression.PlcList(Arrays.asList(
-                        new Ast.Expression.Literal(BigInteger.valueOf(1)), new Ast.Expression.Literal(BigInteger.valueOf(5)),  new Ast.Expression.Literal(BigInteger.valueOf(10))
-                )))), Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN))
-
+                Arguments.of("Immutable", new Ast.Global("name", false, Optional.of(new Ast.Expression.Literal(BigInteger.ONE))), BigInteger.ONE)
         );
     }
 
@@ -166,7 +161,6 @@ final class InterpreterTests {
         ), Environment.NIL.getValue(), scope);
         Assertions.assertEquals(BigInteger.ONE, scope.lookupVariable("variable").getValue().getValue());
     }
-
 
     @Test
     void testListAssignmentStatement() {
@@ -311,15 +305,6 @@ final class InterpreterTests {
                         BigInteger.valueOf(11)
                 )
         );
-    }
-    @Test
-    void testLogExpressionStatement()
-    {
-        Scope scope = new Scope(null);
-        test(new Ast.Expression.Function("logarithm",
-                        Arrays.asList(new Ast.Expression.Literal(BigDecimal.valueOf(Math.E)))),
-                BigDecimal.valueOf(1,0),
-                scope);
     }
 
     @ParameterizedTest
