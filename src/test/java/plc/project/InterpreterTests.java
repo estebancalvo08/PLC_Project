@@ -439,6 +439,28 @@ final class InterpreterTests {
         test(ast, expected, new Scope(null));
     }
 
+    @ParameterizedTest
+    @MethodSource
+    void testScope(String test, Ast ast, Object expected) {
+        Scope scope = new Scope(null);
+        scope.defineFunction("function", 0, args -> Environment.create("function"));
+        test(ast, expected, scope);
+    }
+
+    private static Stream<Arguments> testScope() {
+        return Stream.of(
+                // function()
+                Arguments.of("Function",
+                        new Ast.Expression.Function("function", Arrays.asList()),
+                        "function"
+                ),
+                // print("Hello, World!")
+                Arguments.of("Print",
+                        new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("Hello, World!"))),
+                        Environment.NIL.getValue()
+                )
+        );
+    }
     private static Scope test(Ast ast, Object expected, Scope scope) {
         Interpreter interpreter = new Interpreter(scope);
         if (expected != null) {
