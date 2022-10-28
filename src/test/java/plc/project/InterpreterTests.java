@@ -254,6 +254,29 @@ final class InterpreterTests {
                 )
         );
     }
+    @ParameterizedTest
+    @MethodSource
+    void testMoreIfStatement(String test, Ast.Statement.If ast, Object expected) {
+        Scope scope = new Scope(null);
+        scope.defineVariable("numb", true, Environment.create(BigInteger.ONE));
+        //scope.defineVariable("numb", true, Environment.create(BigInteger.valueOf(3)));
+        test(ast, Environment.NIL.getValue(), scope);
+        Assertions.assertEquals(expected, scope.lookupVariable("numb").getValue().getValue());
+    }
+
+    private static  Stream<Arguments> testMoreIfStatement() {
+        return Stream.of(
+                //IF numb + 1 == 3 DO numb = 1 ELSE numb = 10; END
+                Arguments.of("Binary Condition and comparison",
+                        new Ast.Statement.If(
+                                new Ast.Expression.Binary("==", new Ast.Expression.Binary("+", new Ast.Expression.Access(Optional.empty(), "numb"), new Ast.Expression.Literal(BigInteger.ONE)), new Ast.Expression.Literal(BigInteger.valueOf(3))),
+                                Arrays.asList(new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "numb"), new Ast.Expression.Literal(BigInteger.ONE))),
+                                Arrays.asList(new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "numb"), new Ast.Expression.Literal(BigInteger.TEN)))
+                        ),
+                        BigInteger.TEN
+                )
+        );
+    }
 
     @Test
     void testSwitchStatement() {
