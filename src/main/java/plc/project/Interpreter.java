@@ -25,7 +25,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Source ast) {
-        //System.out.println("Source scope: " + scope.variables); //Todo Delete
         for(Ast.Global globals : ast.getGlobals())
             visit(globals);
         for(Ast.Function functions : ast.getFunctions())
@@ -46,7 +45,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     @Override
     public Environment.PlcObject visit(Ast.Function ast) {
         Scope curr = scope;
-        //System.out.println("Function scope: " + scope); //Todo Delete
         List<String> params = ast.getParameters();
         scope.defineFunction(ast.getName(), params.size(), args ->
         {
@@ -61,13 +59,14 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                         return visit(statement);
                     }
                     catch(Return e){
+                        scope = scope.getParent();
                         return e.value;
                     }
                 }
                 else
                     visit(statement);
             }
-            scope = curr.getParent();
+            scope = scope.getParent();
             return Environment.NIL;
         });
         return Environment.NIL;
@@ -91,8 +90,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Assignment ast) {
-        //System.out.println("Assignment scope: " + scope.variables); //Todo Delete
-        Ast.Expression.Access receiver = requireType(Ast.Expression.Access.class, new Environment.PlcObject(scope, ast.getReceiver()));
+        Ast.Expression.Access receiver = requireType(Ast.Expression.Access.class, Environment.create(ast.getReceiver()));
         Environment.Variable var = scope.lookupVariable(receiver.getName());
         if(!var.getMutable())
             throw new RuntimeException("Illegal reassignment of const val");
@@ -118,7 +116,6 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         Boolean bool = requireType(Boolean.class, visit(ast.getCondition()));
         List<Ast.Statement> statements;
         scope = new Scope(scope);
-        //System.out.println("If scope: " + scope); //Todo Delete
         if(bool)
             statements = ast.getThenStatements();
         else
@@ -131,9 +128,9 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Switch ast) {
-        scope = new Scope(scope);
         Object expr = visit(ast.getCondition()).getValue();
         List<Ast.Statement.Case> cases = ast.getCases();
+        scope = new Scope(scope);
         int i = 0;
         for(; i < cases.size() - 1; i++) {
             if(expr.equals(visit(cases.get(0).getValue().get()).getValue()))
@@ -153,13 +150,14 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.While ast) {
+        scope = new Scope(scope);
         Boolean conditional = requireType(Boolean.class, visit(ast.getCondition()));
+        List<Ast.Statement> statements = ast.getStatements();
         while(conditional)
         {
-            List<Ast.Statement> statements = ast.getStatements();
-            for(int i = 0; i < statements.size(); i++)
+            for(int i = 0; i < statements.size(); i++) {
                 visit(statements.get(i));
-            //recursion for conditional
+            }
             conditional = requireType(Boolean.class, visit(ast.getCondition()));
         }
         scope = scope.getParent();
@@ -229,13 +227,13 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             Boolean type = l.getValue().getClass().equals(r.getValue().getClass());
             if(!type)
                 throw new RuntimeException("Illegal Comparison of different classes");
-            return equals ? Environment.create(l.equals(r)) : Environment.create(!l.equals(r));
+            return equals ? Environment.create(l.getValue().equals(r.getValue())) : Environment.create(!l.getValue().equals(r.getValue()));
         }
         if(operator == "+")
         {
             Environment.PlcObject l = visit(left);
             Environment.PlcObject r = visit(right);
-            if(l.getValue().getClass().equals(String.class) || l.getValue().getClass().equals(String.class))
+            if(l.getValue().getClass().equals(String.class) || r.getValue().getClass().equals(String.class))
                 return Environment.create(l.getValue().toString() + r.getValue().toString());
             requireType(l.getValue().getClass(), r);
             if(l.getValue().getClass().equals(BigInteger.class))
@@ -277,15 +275,12 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
         else {//Case where ^ operator used
             BigInteger l = requireType(BigInteger.class, visit(left));
-            BigInteger r = requireType(BigInteger.class, visit(left));
-            if((l.longValue() ^ r.longValue()) > (long)Integer.MAX_VALUE)
-                return Environment.create(BigInteger.valueOf(Integer.MAX_VALUE));
-            return Environment.create(BigInteger.valueOf(l.intValue() ^ r.intValue()));
+            BigInteger r = requireType(BigInteger.class, visit(right));
+            return Environment.create(BigInteger.valueOf((long) Math.pow(l.doubleValue(), r.doubleValue())));
         }
     }
     @Override
     public Environment.PlcObject visit(Ast.Expression.Access ast) {
-        //System.out.println("Access scope: " + scope.variables); //Todo Delete
         Environment.Variable var = scope.lookupVariable(ast.getName());
         Optional optional = ast.getOffset();
         if(optional.isPresent())
