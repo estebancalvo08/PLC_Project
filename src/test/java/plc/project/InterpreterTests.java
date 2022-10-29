@@ -892,11 +892,23 @@ final class InterpreterTests {
                                         new Ast.Function("main", Arrays.asList(), Arrays.asList(
                                                 new Ast.Statement.Assignment( new Ast.Expression.Literal(BigInteger.TEN),new Ast.Expression.Access(Optional.empty(), "a"))))))),
                 Arguments.of("Changing immutable variable",
-                        //name()
                         new Ast.Source(Arrays.asList(new Ast.Global("a", false, Optional.of(new Ast.Expression.Literal(BigInteger.ONE)))),
                                 Arrays.asList(
                                         new Ast.Function("main", Arrays.asList(), Arrays.asList(
-                                                new Ast.Statement.Assignment( new Ast.Expression.Access(Optional.empty(), "a"),new Ast.Expression.Literal(BigInteger.TEN)))))))
+                                                new Ast.Statement.Assignment( new Ast.Expression.Access(Optional.empty(), "a"),new Ast.Expression.Literal(BigInteger.TEN))))))),
+                Arguments.of("Variable defined in IF statement no Longer in Scope",
+                        new Ast.Source(Arrays.asList(),
+                                Arrays.asList(
+                                        new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                                new Ast.Statement.If(new Ast.Expression.Literal(Boolean.TRUE),
+                                                        Arrays.asList( new Ast.Statement.If(new Ast.Expression.Literal(Boolean.TRUE),
+                                                                Arrays.asList( new Ast.Statement.If(new Ast.Expression.Literal(Boolean.TRUE),
+                                                                        Arrays.asList(new Ast.Statement.Declaration("a", Optional.of(new Ast.Expression.Literal(BigInteger.ONE)))),
+                                                                        Arrays.asList())),
+                                                                Arrays.asList())),
+                                                        Arrays.asList()),
+                                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "a")))
+                                                ))))))
         );
     }
 

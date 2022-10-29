@@ -162,11 +162,9 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         try {
             scope = new Scope(scope);
             List<Ast.Statement> statements = ast.getStatements();
-            while (requireType(Boolean.class, visit(ast.getCondition()))) {
-                for (int i = 0; i < statements.size(); i++) {
+            while (requireType(Boolean.class, visit(ast.getCondition())))
+                for (int i = 0; i < statements.size(); i++)
                     visit(statements.get(i));
-                }
-            }
         }
         finally {
             scope = scope.getParent();
