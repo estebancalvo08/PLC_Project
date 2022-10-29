@@ -274,7 +274,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             requireType(l.getValue().getClass(), r);
             if(l.getValue().getClass().equals(BigInteger.class)) {
                 if(r.getValue().equals(BigInteger.ZERO))
-                    throw new RuntimeException("Illegal division of Zero");
+                    throw new RuntimeException("Illegal division by Zero");
                 return Environment.create(BigInteger.valueOf(((BigInteger) l.getValue()).intValue() / ((BigInteger) r.getValue()).intValue()));
             }
             if(l.getValue().getClass().equals(BigDecimal.class)){

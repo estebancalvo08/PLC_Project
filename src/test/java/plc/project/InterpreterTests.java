@@ -162,7 +162,6 @@ final class InterpreterTests {
                  RETURN C;
                  END;
                 */
-
                 Arguments.of("Main", new Ast.Source(
                         Arrays.asList( new Ast.Global("x", true, Optional.of(new Ast.Expression.Literal(BigInteger.TEN))),
                                 new Ast.Global("y", true, Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(20)))),
@@ -829,6 +828,7 @@ final class InterpreterTests {
         Interpreter interpreter = new Interpreter(scope);
         RuntimeException re = Assertions.assertThrows(RuntimeException.class, () -> interpreter.visit(ast));
         Assertions.assertEquals(RuntimeException.class, re.getClass());
+        System.out.println(re);
     }
 
     @ParameterizedTest
@@ -846,9 +846,57 @@ final class InterpreterTests {
                        new Ast.Source(Arrays.asList(
                                new Ast.Global("name", true, Optional.empty()),
                                new Ast.Global("name", true, Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(1))))), Arrays.asList())),
-                Arguments.of("While with strings",
+                Arguments.of("While condition not boolean",
                         //name()
-                        new Ast.Statement.While(new Ast.Expression.Literal("false"), Arrays.asList()))
+                        new Ast.Statement.While(new Ast.Expression.Literal("false"), Arrays.asList())),
+                Arguments.of("List with offset not BigInt",
+                        //name()
+                        new Ast.Source(Arrays.asList(new Ast.Global("list", true,
+                                Optional.of(new Ast.Expression.PlcList(Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE),
+                                new Ast.Expression.Literal(BigInteger.valueOf(5)),
+                                new Ast.Expression.Literal(BigInteger.TEN)))))),
+                                Arrays.asList(
+                                        new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                                new Ast.Statement.Return( new Ast.Expression.Access(Optional.of(new Ast.Expression.Literal(BigDecimal.ONE)),"list"))))
+                        ))),
+                Arguments.of("Offset out of bounds exception",
+                        //name()
+                        new Ast.Source(Arrays.asList(new Ast.Global("list", true,
+                                Optional.of(new Ast.Expression.PlcList(Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE),
+                                        new Ast.Expression.Literal(BigInteger.valueOf(5)),
+                                        new Ast.Expression.Literal(BigInteger.TEN)))))),
+                                Arrays.asList(
+                                        new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                                new Ast.Statement.Return( new Ast.Expression.Access(Optional.of(new Ast.Expression.Literal(BigInteger.TEN)),"list"))))
+                                ))),
+                Arguments.of("Illegal Division by zero",
+                        //name()
+                        new Ast.Expression.Binary("/", new Ast.Expression.Literal(BigInteger.ONE), new Ast.Expression.Literal(BigInteger.ZERO))),
+                Arguments.of("No main source",
+                        //name()
+                        new Ast.Source(Arrays.asList(new Ast.Global("list", true,
+                                Optional.of(new Ast.Expression.PlcList(Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE),
+                                        new Ast.Expression.Literal(BigInteger.valueOf(5)),
+                                        new Ast.Expression.Literal(BigInteger.TEN)))))),
+                                Arrays.asList(
+                                        new Ast.Function("fun", Arrays.asList(), Arrays.asList(
+                                                new Ast.Statement.Return( new Ast.Expression.Access(Optional.of(new Ast.Expression.Literal(BigInteger.TEN)),"list"))))
+                                ))),
+                Arguments.of("Illegal exponentiation of non Big Int numbers",
+                        //name()
+                        new Ast.Expression.Binary("^", new Ast.Expression.Literal(BigInteger.TEN), new Ast.Expression.Literal(BigDecimal.TEN))),
+                Arguments.of("No main source",
+                        //name()
+                        new Ast.Source(Arrays.asList(new Ast.Global("a", true, Optional.of(new Ast.Expression.Literal(BigInteger.ONE)))),
+                                Arrays.asList(
+                                        new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                                new Ast.Statement.Assignment( new Ast.Expression.Literal(BigInteger.TEN),new Ast.Expression.Access(Optional.empty(), "a"))))))),
+                Arguments.of("Changing immutable variable",
+                        //name()
+                        new Ast.Source(Arrays.asList(new Ast.Global("a", false, Optional.of(new Ast.Expression.Literal(BigInteger.ONE)))),
+                                Arrays.asList(
+                                        new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                                new Ast.Statement.Assignment( new Ast.Expression.Access(Optional.empty(), "a"),new Ast.Expression.Literal(BigInteger.TEN)))))))
         );
     }
 
