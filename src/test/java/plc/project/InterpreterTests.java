@@ -44,7 +44,7 @@ final class InterpreterTests {
                         Arrays.asList(new Ast.Function("main", Arrays.asList(), Arrays.asList(
                                 new Ast.Statement.Expression(new Ast.Expression.Binary("+",
                                         new Ast.Expression.Access(Optional.empty(), "x"),
-                                        new Ast.Expression.Access(Optional.empty(), "y")                                ))
+                                        new Ast.Expression.Access(Optional.empty(), "y")))
                         )))
                 ), Environment.NIL.getValue())
         );
@@ -146,28 +146,19 @@ final class InterpreterTests {
                     while(z > 0) DO
                         if(z == 6)
                             c = c + add(a,b);
-                        if(z == 4)
-                            c = c + sub(b,a);
                         if(z == 5)
                             c = c + mult(a,b);
+                         if(z == 4)
+                            c = c + sub(a,b);
                         if(z == 3)
-                            c = c + div(a,b);
+                            c = c + div(a,2);
                         if(z == 2)
-                            c = c + add(a,b);
-                        if(z == 1)
                             c = c + pow(a,2);
                         z = z - 1;
                     END;
                 print(b);
                 print(a);
                 print(c)
-                SWITCH c
-                    CASE c > 100:
-                        print("c greater than 100);
-                     CASE c < 100:
-                       print("c is less than 100");
-                     Default:
-                        print("c equals 10");
                  RETURN C;
                  END;
                 */
@@ -201,7 +192,7 @@ final class InterpreterTests {
                                 new Ast.Function("main", Arrays.asList(), Arrays.asList(
                                         new Ast.Statement.Declaration("a",Optional.of(new Ast.Expression.Access(Optional.empty(), "x"))),
                                         new Ast.Statement.Declaration("b",Optional.of(new Ast.Expression.Access(Optional.empty(), "y"))),
-                                        new Ast.Statement.Declaration("c",Optional.of(new Ast.Expression.Access(Optional.empty(), "z"))),
+                                        new Ast.Statement.Declaration("c",Optional.of(new Ast.Expression.Literal(BigInteger.ZERO))),
                                         new Ast.Statement.While(new Ast.Expression.Binary(">", new Ast.Expression.Access(Optional.empty(), "z"), new Ast.Expression.Literal(BigInteger.ZERO)),
                                                 Arrays.asList(
                                                         new Ast.Statement.If(new Ast.Expression.Binary("==", new Ast.Expression.Access(Optional.empty(), "z"), new Ast.Expression.Literal(BigInteger.valueOf(6))),
@@ -225,14 +216,14 @@ final class InterpreterTests {
                                                         new Ast.Statement.If(new Ast.Expression.Binary("==", new Ast.Expression.Access(Optional.empty(), "z"), new Ast.Expression.Literal(BigInteger.valueOf(3))),
                                                                 Arrays.asList(new Ast.Statement.Assignment(
                                                                         new Ast.Expression.Access(Optional.empty(), "c"), new Ast.Expression.Binary("+", new Ast.Expression.Access(Optional.empty(), "c"),
-                                                                        new Ast.Expression.Function("div", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "a"),new Ast.Expression.Access(Optional.empty(), "b")))))
+                                                                        new Ast.Expression.Function("div", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "a"),new Ast.Expression.Literal(BigInteger.valueOf(2))))))
                                                                 ), Arrays.asList()),
 
                                                         new Ast.Statement.If(new Ast.Expression.Binary("==", new Ast.Expression.Access(Optional.empty(), "z"), new Ast.Expression.Literal(BigInteger.valueOf(2))),
                                                                 Arrays.asList(new Ast.Statement.Assignment(
                                                                         new Ast.Expression.Access(Optional.empty(), "c"),  new Ast.Expression.Binary("+", new Ast.Expression.Access(Optional.empty(), "c"),
-                                                                        new Ast.Expression.Function("pow", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "a"),new Ast.Expression.Access(Optional.empty(), "b")))))
-                                                                ), Arrays.asList()),
+                                                                        new Ast.Expression.Function("exp", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "a"),new Ast.Expression.Literal(BigInteger.valueOf(2))))))), Arrays.asList()),
+                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "c")))),
                                                         new Ast.Statement.Assignment(
                                                                 new Ast.Expression.Access(Optional.empty(), "z"),  new Ast.Expression.Binary("-", new Ast.Expression.Access(Optional.empty(), "z"), new Ast.Expression.Literal(BigInteger.ONE)))
                                                 )),
@@ -240,7 +231,7 @@ final class InterpreterTests {
                                         new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "b")))),
                                         new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "c")))),
                                         new Ast.Statement.Return(new Ast.Expression.Access(Optional.empty(), "c")))
-                                        ))), BigInteger.valueOf(10))
+                                        ))), BigInteger.valueOf(325))
         );
     }
     @ParameterizedTest

@@ -1,4 +1,5 @@
 package plc.project;
+import javax.swing.plaf.IconUIResource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -44,29 +45,29 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     }
     @Override
     public Environment.PlcObject visit(Ast.Function ast) {
-        Scope curr = scope;
         List<String> params = ast.getParameters();
+        Scope outside = scope;
         scope.defineFunction(ast.getName(), params.size(), args ->
         {
-            scope = new Scope(curr);
-            for(int i = 0; i < params.size(); i++)
-                scope.defineVariable(params.get(i).toString(), true, args.get(i));
-            for(Ast.Statement statement: ast.getStatements())
-            {
-                if(statement instanceof Ast.Statement.Return)
-                {
-                    try {
-                        return visit(statement);
-                    }
-                    catch(Return e){
-                        scope = scope.getParent();
-                        return e.value;
-                    }
+            Scope curr = scope;
+            scope = new Scope(outside);
+            try {
+                for (int i = 0; i < params.size(); i++)
+                    scope.defineVariable(params.get(i), true, Environment.create(args.get(i).getValue()));
+                for (Ast.Statement statement : ast.getStatements()) {
+                    if (statement instanceof Ast.Statement.Return) {
+                        try {
+                            return visit(statement);
+                        } catch (Return e) {
+                            return e.value;
+                        }
+                    } else
+                        visit(statement);
                 }
-                else
-                    visit(statement);
             }
-            scope = scope.getParent();
+            finally {
+                scope = curr;
+            }
             return Environment.NIL;
         });
         return Environment.NIL;
@@ -113,31 +114,40 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.If ast) {
-        Boolean bool = requireType(Boolean.class, visit(ast.getCondition()));
-        List<Ast.Statement> statements;
-        scope = new Scope(scope);
-        if(bool)
-            statements = ast.getThenStatements();
-        else
-            statements = ast.getElseStatements();
-        for(int i = 0; i < statements.size(); i++)
-            visit(statements.get(i));
-        scope = scope.getParent();
+        try {
+            scope = new Scope(scope);
+            Boolean bool = requireType(Boolean.class, visit(ast.getCondition()));
+            List<Ast.Statement> statements;
+            if (bool)
+                statements = ast.getThenStatements();
+            else
+                statements = ast.getElseStatements();
+            for (int i = 0; i < statements.size(); i++) {
+                visit(statements.get(i));
+            }
+        }
+        finally {
+            scope = scope.getParent();
+        }
         return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Switch ast) {
-        Object expr = visit(ast.getCondition()).getValue();
-        List<Ast.Statement.Case> cases = ast.getCases();
-        scope = new Scope(scope);
-        int i = 0;
-        for(; i < cases.size() - 1; i++) {
-            if(expr.equals(visit(cases.get(0).getValue().get()).getValue()))
-                break;
+        try {
+            scope = new Scope(scope);
+            Object expr = visit(ast.getCondition()).getValue();
+            List<Ast.Statement.Case> cases = ast.getCases();
+            int i = 0;
+            for (; i < cases.size() - 1; i++) {
+                if (expr.equals(visit(cases.get(0).getValue().get()).getValue()))
+                    break;
+            }
+            return visit(cases.get(i));
         }
+        finally{
         scope = scope.getParent();
-        return visit(cases.get(i));
+        }
     }
 
     @Override
@@ -150,17 +160,18 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.While ast) {
-        scope = new Scope(scope);
-        Boolean conditional = requireType(Boolean.class, visit(ast.getCondition()));
-        List<Ast.Statement> statements = ast.getStatements();
-        while(conditional)
-        {
-            for(int i = 0; i < statements.size(); i++) {
-                visit(statements.get(i));
+        try {
+            scope = new Scope(scope);
+            List<Ast.Statement> statements = ast.getStatements();
+            while (requireType(Boolean.class, visit(ast.getCondition()))) {
+                for (int i = 0; i < statements.size(); i++) {
+                    visit(statements.get(i));
+                }
             }
-            conditional = requireType(Boolean.class, visit(ast.getCondition()));
         }
-        scope = scope.getParent();
+        finally {
+            scope = scope.getParent();
+        }
         return Environment.NIL;
     }
 
@@ -300,7 +311,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         List<Ast.Expression> args = ast.getArguments();
         List<Environment.PlcObject> toInvoke = new ArrayList<>();
         for(int i =0; i < args.size(); i++) {
-            toInvoke.add(visit(args.get(i)));
+            toInvoke.add(Environment.create(visit(args.get(i)).getValue()));
         }
         try{
             return fun.invoke(toInvoke);
