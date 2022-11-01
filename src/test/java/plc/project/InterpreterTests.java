@@ -1,12 +1,9 @@
 package plc.project;
-
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.math.BigDecimal;
@@ -74,28 +71,28 @@ final class InterpreterTests {
             END*/
                 Arguments.of("If scope", new Ast.Source(
                         Arrays.asList(), Arrays.asList(
-                                new Ast.Function("main", Arrays.asList(), Arrays.asList(
-                                        new Ast.Statement.Declaration("x",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(1)))),
-                                        new Ast.Statement.Declaration("y",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(2)))),
-                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
-                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y")))),
-                                        new Ast.Statement.If(new Ast.Expression.Literal(Boolean.TRUE),
-                                                Arrays.asList(
+                        new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                new Ast.Statement.Declaration("x",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(1)))),
+                                new Ast.Statement.Declaration("y",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(2)))),
+                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
+                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y")))),
+                                new Ast.Statement.If(new Ast.Expression.Literal(Boolean.TRUE),
+                                        Arrays.asList(
                                                 new Ast.Statement.Declaration("x",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(3)))),
                                                 new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "y"), new Ast.Expression.Literal(BigInteger.valueOf(4))),
                                                 new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
                                                 new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y"))))
                                         ), Arrays.asList()),
-                                        new Ast.Statement.If(new Ast.Expression.Literal(Boolean.TRUE),
-                                                Arrays.asList(
-                                                        new Ast.Statement.Declaration("x",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(4)))),
-                                                        new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "y"), new Ast.Expression.Literal(BigInteger.valueOf(5))),
-                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
-                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y"))))
-                                                ), Arrays.asList()),
-                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
-                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y"))))
-                                        ))
+                                new Ast.Statement.If(new Ast.Expression.Literal(Boolean.TRUE),
+                                        Arrays.asList(
+                                                new Ast.Statement.Declaration("x",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(4)))),
+                                                new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "y"), new Ast.Expression.Literal(BigInteger.valueOf(5))),
+                                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
+                                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y"))))
+                                        ), Arrays.asList()),
+                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
+                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y"))))
+                        ))
                 )), Environment.NIL.getValue()),
 
                 /*       VAR x = 1;
@@ -114,17 +111,17 @@ final class InterpreterTests {
                                 new Ast.Global("z", true, Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(3))))),
                         Arrays.asList( //functions
                                 //Fun f(z) do return x + y + z
-                        new Ast.Function("f", Arrays.asList("z"), Arrays.asList(
-                                new Ast.Statement.Return(
-                                        new Ast.Expression.Binary("+",
-                                                new Ast.Expression.Binary("+", new Ast.Expression.Access(Optional.empty(), "x"), new Ast.Expression.Access(Optional.empty(), "y")),
-                                                new Ast.Expression.Access(Optional.empty(), "z"))
-                        ))),
-                        new Ast.Function("main", Arrays.asList(), Arrays.asList(
-                                new Ast.Statement.Declaration("y",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(4)))),
-                                new Ast.Statement.Return(new Ast.Expression.Function("f", Arrays.asList(new Ast.Expression.Literal(BigInteger.valueOf(5))))
-                                )))
-                )), BigInteger.valueOf(8)),
+                                new Ast.Function("f", Arrays.asList("z"), Arrays.asList(
+                                        new Ast.Statement.Return(
+                                                new Ast.Expression.Binary("+",
+                                                        new Ast.Expression.Binary("+", new Ast.Expression.Access(Optional.empty(), "x"), new Ast.Expression.Access(Optional.empty(), "y")),
+                                                        new Ast.Expression.Access(Optional.empty(), "z"))
+                                        ))),
+                                new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                        new Ast.Statement.Declaration("y",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(4)))),
+                                        new Ast.Statement.Return(new Ast.Expression.Function("f", Arrays.asList(new Ast.Expression.Literal(BigInteger.valueOf(5))))
+                                        )))
+                        )), BigInteger.valueOf(8)),
                 /*
                 Var x = 10;
                 Var y = 20;
@@ -171,7 +168,7 @@ final class InterpreterTests {
                                 new Ast.Function("add", Arrays.asList("a", "b"), Arrays.asList(
                                         new Ast.Statement.Return(
                                                 new Ast.Expression.Binary("+",
-                                                       new Ast.Expression.Access(Optional.empty(), "a"), new Ast.Expression.Access(Optional.empty(), "b"))))),
+                                                        new Ast.Expression.Access(Optional.empty(), "a"), new Ast.Expression.Access(Optional.empty(), "b"))))),
                                 new Ast.Function("sub", Arrays.asList("a", "b"), Arrays.asList(
                                         new Ast.Statement.Return(
                                                 new Ast.Expression.Binary("-",
@@ -230,7 +227,7 @@ final class InterpreterTests {
                                         new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "b")))),
                                         new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "c")))),
                                         new Ast.Statement.Return(new Ast.Expression.Access(Optional.empty(), "c")))
-                                        ))), BigInteger.valueOf(325))
+                                ))), BigInteger.valueOf(325))
         );
     }
     @ParameterizedTest
@@ -255,8 +252,8 @@ final class InterpreterTests {
         List<Object> expected = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN);
 
         List<Ast.Expression> values = Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE),
-                                                    new Ast.Expression.Literal(BigInteger.valueOf(5)),
-                                                    new Ast.Expression.Literal(BigInteger.TEN));
+                new Ast.Expression.Literal(BigInteger.valueOf(5)),
+                new Ast.Expression.Literal(BigInteger.TEN));
 
         Optional<Ast.Expression> value = Optional.of(new Ast.Expression.PlcList(values));
         Ast.Global ast = new Ast.Global("list", true, value);
@@ -426,7 +423,7 @@ final class InterpreterTests {
         List<Ast.Statement> statements = Arrays.asList(
                 new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("yes")))),
                 new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "letter"),
-                                             new Ast.Expression.Literal(new Character('n')))
+                        new Ast.Expression.Literal(new Character('n')))
         );
 
         List<Ast.Statement.Case> cases = Arrays.asList(
@@ -531,19 +528,19 @@ final class InterpreterTests {
                                         new Ast.Expression.Literal(new BigInteger("8")),
                                         new Ast.Expression.Literal(new BigInteger("9"))))),
                         Boolean.TRUE
-                        ),
+                ),
 
                 //((((1 + 2) + 3) * 4) + 6) / 6)
                 Arguments.of("Nested Expressions",
                         new Ast.Expression.Group(new Ast.Expression.Binary("/",
                                 new Ast.Expression.Group(new Ast.Expression.Binary("+",
                                         new Ast.Expression.Group(new Ast.Expression.Binary("*",
+                                                new Ast.Expression.Group(new Ast.Expression.Binary("+",
                                                         new Ast.Expression.Group(new Ast.Expression.Binary("+",
-                                                                new Ast.Expression.Group(new Ast.Expression.Binary("+",
-                                                                        new Ast.Expression.Literal(BigInteger.valueOf(1)),
-                                                                        new Ast.Expression.Literal(BigInteger.valueOf(2)))),
-                                                                new Ast.Expression.Literal(BigInteger.valueOf(3)))),
-                                                        new Ast.Expression.Literal(BigInteger.valueOf(4)))),
+                                                                new Ast.Expression.Literal(BigInteger.valueOf(1)),
+                                                                new Ast.Expression.Literal(BigInteger.valueOf(2)))),
+                                                        new Ast.Expression.Literal(BigInteger.valueOf(3)))),
+                                                new Ast.Expression.Literal(BigInteger.valueOf(4)))),
                                         new Ast.Expression.Literal(BigInteger.valueOf(6)))),
                                 new Ast.Expression.Literal(BigInteger.valueOf(6)))),
                         BigInteger.valueOf(5))
@@ -663,7 +660,7 @@ final class InterpreterTests {
                 ),
 
                 // "hello there" =="hello there"
-                Arguments.of("Equal true BigInt",
+                Arguments.of("Equal true strings",
                         new Ast.Expression.Binary("==",
                                 new Ast.Expression.Literal("hello there"),
                                 new Ast.Expression.Literal("hello there")
@@ -744,6 +741,28 @@ final class InterpreterTests {
                                 new Ast.Expression.Literal(new BigInteger("32"))
                         ),
                         new BigInteger("4294967296")
+                ),
+                // negative base
+                Arguments.of("Negative base",
+                        new Ast.Expression.Binary("^",
+                                new Ast.Expression.Literal(new BigInteger("-2")),
+                                new Ast.Expression.Literal(new BigInteger("3"))
+                        ),
+                        new BigInteger("-8")
+                ),
+                Arguments.of("Negative Exponent",
+                        new Ast.Expression.Binary("^",
+                                new Ast.Expression.Literal(new BigInteger("5")),
+                                new Ast.Expression.Literal(new BigInteger("-2"))
+                        ),
+                        new BigInteger("0")
+                ),
+                Arguments.of("Negative Exponent with one as base",
+                        new Ast.Expression.Binary("^",
+                                new Ast.Expression.Literal(new BigInteger("1")),
+                                new Ast.Expression.Literal(new BigInteger("-2"))
+                        ),
+                        new BigInteger("1")
                 )
         );
     }
@@ -839,13 +858,13 @@ final class InterpreterTests {
     private static Stream<Arguments> testExceptions() {
         return Stream.of(
                 Arguments.of("Integer Decimal Subtraction",
-                                //name()
-                                new Ast.Expression.Binary("-", new Ast.Expression.Literal(BigInteger.valueOf(1)), new Ast.Expression.Literal(BigDecimal.valueOf(1.0)))),
+                        //name()
+                        new Ast.Expression.Binary("-", new Ast.Expression.Literal(BigInteger.valueOf(1)), new Ast.Expression.Literal(BigDecimal.valueOf(1.0)))),
                 Arguments.of("Redefined Global",
                         //name()
-                       new Ast.Source(Arrays.asList(
-                               new Ast.Global("name", true, Optional.empty()),
-                               new Ast.Global("name", true, Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(1))))), Arrays.asList())),
+                        new Ast.Source(Arrays.asList(
+                                new Ast.Global("name", true, Optional.empty()),
+                                new Ast.Global("name", true, Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(1))))), Arrays.asList())),
                 Arguments.of("While condition not boolean",
                         //name()
                         new Ast.Statement.While(new Ast.Expression.Literal("false"), Arrays.asList())),
@@ -853,12 +872,12 @@ final class InterpreterTests {
                         //name()
                         new Ast.Source(Arrays.asList(new Ast.Global("list", true,
                                 Optional.of(new Ast.Expression.PlcList(Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE),
-                                new Ast.Expression.Literal(BigInteger.valueOf(5)),
-                                new Ast.Expression.Literal(BigInteger.TEN)))))),
+                                        new Ast.Expression.Literal(BigInteger.valueOf(5)),
+                                        new Ast.Expression.Literal(BigInteger.TEN)))))),
                                 Arrays.asList(
                                         new Ast.Function("main", Arrays.asList(), Arrays.asList(
                                                 new Ast.Statement.Return( new Ast.Expression.Access(Optional.of(new Ast.Expression.Literal(BigDecimal.ONE)),"list"))))
-                        ))),
+                                ))),
                 Arguments.of("Offset out of bounds exception",
                         //name()
                         new Ast.Source(Arrays.asList(new Ast.Global("list", true,
@@ -910,6 +929,6 @@ final class InterpreterTests {
                                                 new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "a")))
                                                 ))))))
         );
-    }
 
+    }
 }

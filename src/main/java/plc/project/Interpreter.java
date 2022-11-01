@@ -1,4 +1,5 @@
 package plc.project;
+import javax.swing.plaf.IconUIResource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -74,8 +75,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Expression ast) {
-         visit(ast.getExpression());
-         return Environment.NIL;
+        visit(ast.getExpression());
+        return Environment.NIL;
     }
 
     @Override
@@ -145,7 +146,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             return visit(cases.get(i));
         }
         finally{
-        scope = scope.getParent();
+            scope = scope.getParent();
         }
     }
 
@@ -162,9 +163,11 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         try {
             scope = new Scope(scope);
             List<Ast.Statement> statements = ast.getStatements();
-            while (requireType(Boolean.class, visit(ast.getCondition())))
-                for (int i = 0; i < statements.size(); i++)
+            while (requireType(Boolean.class, visit(ast.getCondition()))) {
+                for (int i = 0; i < statements.size(); i++) {
                     visit(statements.get(i));
+                }
+            }
         }
         finally {
             scope = scope.getParent();
@@ -193,51 +196,52 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
     public Environment.PlcObject visit(Ast.Expression.Binary ast) {
         String operator = ast.getOperator();
         Ast.Expression left = ast.getLeft(), right = ast.getRight();
-        if(operator == "&&")
+        if(operator.equals("&&"))
         {
             Boolean l = requireType(Boolean.class, visit(left));
             Boolean r = requireType(Boolean.class, visit(right));
-            return Environment.create(l && r);
+            return Environment.create(Boolean.valueOf(l && r));
         }
-        if(operator == "||")
+        if(operator.equals("||"))
         {
             Boolean l = requireType(Boolean.class, visit(left));
             if(l)
                 return Environment.create(true);
             Boolean r = requireType(Boolean.class, visit(right));
-            return Environment.create(l || r);
+            return Environment.create(Boolean.valueOf(l || r));
         }
-        if(operator == "<" || operator == ">")
+        if(operator.equals("<") || operator.equals(">"))
         {
             //if less than, compare to will return -1
-            int val = operator == "<" ? -1 : 1;
+            int val = operator.equals("<") ? -1 : 1;
             Environment.PlcObject l = visit(left);
+
             Environment.PlcObject r = visit(right);
             Boolean type = l.getValue().getClass().equals(r.getValue().getClass());
             if(!type)
                 throw new RuntimeException("Illegal Comparison of different classes");
             if(l.getValue().getClass().equals(BigInteger.class))
-                return Environment.create(((BigInteger)l.getValue()).compareTo((BigInteger)r.getValue()) == val);
+                return Environment.create(Boolean.valueOf(((BigInteger) l.getValue()).compareTo((BigInteger)r.getValue()) == val));
             if(l.getValue().getClass().equals(BigDecimal.class))
-                return Environment.create(((BigDecimal)l.getValue()).compareTo((BigDecimal)r.getValue()) == val);
+                return Environment.create(Boolean.valueOf(((BigDecimal)l.getValue()).compareTo((BigDecimal)r.getValue()) == val));
             if(l.getValue().getClass().equals(Character.class))
-                return Environment.create(((Character)l.getValue()).compareTo((Character)r.getValue()) == val);
+                return Environment.create(Boolean.valueOf(((Character)l.getValue()).compareTo((Character)r.getValue()) == val));
             if(l.getValue().getClass().equals(String.class))
-                return Environment.create(((String)l.getValue()).compareTo((String)r.getValue()) == val);
+                return Environment.create(Boolean.valueOf(((String)l.getValue()).compareTo((String)r.getValue()) == val));
             if(l.getValue().getClass().equals(Boolean.class))
-                return Environment.create(((Boolean)l.getValue()).compareTo((Boolean)r.getValue()) == val);
+                return Environment.create(Boolean.valueOf(((Boolean)l.getValue()).compareTo((Boolean)r.getValue()) == val));
         }
-        if(operator == "!=" || operator == "==")
+        if(operator.equals("!=") || operator.equals("=="))
         {
-            Boolean equals = operator == "==" ? true : false;
+            Boolean equals = operator.equals("==") ? true : false;
             Environment.PlcObject l = visit(left);
             Environment.PlcObject r = visit(right);
             Boolean type = l.getValue().getClass().equals(r.getValue().getClass());
             if(!type)
                 throw new RuntimeException("Illegal Comparison of different classes");
-            return equals ? Environment.create(l.getValue().equals(r.getValue())) : Environment.create(!l.getValue().equals(r.getValue()));
+            return equals ? Environment.create(Boolean.valueOf(l.getValue().equals(r.getValue()))) : Environment.create(Boolean.valueOf(!l.getValue().equals(r.getValue())));
         }
-        if(operator == "+")
+        if(operator.equals("+"))
         {
             Environment.PlcObject l = visit(left);
             Environment.PlcObject r = visit(right);
@@ -245,14 +249,14 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                 return Environment.create(l.getValue().toString() + r.getValue().toString());
             requireType(l.getValue().getClass(), r);
             if(l.getValue().getClass().equals(BigInteger.class))
-                return Environment.create(BigInteger.valueOf(((BigInteger)l.getValue()).intValue() + ((BigInteger)r.getValue()).intValue()));
+                return Environment.create(BigInteger.valueOf((long)((BigInteger)l.getValue()).intValue() + (long)((BigInteger)r.getValue()).intValue()));
             if(l.getValue().getClass().equals(BigDecimal.class))
                 return Environment.create(BigDecimal.valueOf(((BigDecimal)l.getValue()).doubleValue() + ((BigDecimal)r.getValue()).doubleValue()));
             throw new RuntimeException("Illegal addition of Objects");
         }
-        if(operator == "-" || operator == "*")
+        if(operator.equals("-") || operator.equals("*"))
         {
-            Boolean mult = operator == "*" ? true : false;
+            Boolean mult = operator.equals("*") ? true : false;
             Environment.PlcObject l = visit(left);
             Environment.PlcObject r = visit(right);
             requireType(l.getValue().getClass(), r);
@@ -264,7 +268,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                         Environment.create(BigDecimal.valueOf(((BigDecimal)l.getValue()).doubleValue() - ((BigDecimal)r.getValue()).doubleValue()));
             throw new RuntimeException("Illegal " + (mult ? "multiplication" : "subtraction") + " of objects");
         }
-        if(operator == "/")
+        if(operator.equals("/"))
         {
             Environment.PlcObject l = visit(left);
             Environment.PlcObject r = visit(right);
@@ -284,8 +288,20 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         else {//Case where ^ operator used
             BigInteger l = requireType(BigInteger.class, visit(left));
             BigInteger r = requireType(BigInteger.class, visit(right));
-            return Environment.create(BigInteger.valueOf((long) Math.pow(l.doubleValue(), r.doubleValue())));
+            if(r.intValue() == 0 || l.equals(BigInteger.ONE))
+                return Environment.create(BigInteger.ONE);
+            // BigInt ^ (-BigInt) will be a decimal between 0 and 1 unless base is 1
+            if(r.longValue() < 0)
+               return Environment.create(BigInteger.ZERO);
+            return Environment.create(pow(l,r));
         }
+    }
+    private BigInteger pow(BigInteger base, BigInteger exponent)
+    {
+        BigInteger res = BigInteger.ONE;
+        for(BigInteger i = BigInteger.ZERO; i.compareTo(exponent) != 0; i = i.add(BigInteger.ONE))
+            res = res.multiply(base);
+        return res;
     }
     @Override
     public Environment.PlcObject visit(Ast.Expression.Access ast) {
