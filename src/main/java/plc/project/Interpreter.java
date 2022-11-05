@@ -140,7 +140,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             List<Ast.Statement.Case> cases = ast.getCases();
             int i = 0;
             for (; i < cases.size() - 1; i++) {
-                if (expr.equals(visit(cases.get(0).getValue().get()).getValue()))
+                if (expr.equals(visit(cases.get(i).getValue().get()).getValue()))
                     break;
             }
             return visit(cases.get(i));
@@ -293,6 +293,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             // BigInt ^ (-BigInt) will be a decimal between 0 and 1 unless base is 1
             if(r.longValue() < 0)
                return Environment.create(BigInteger.ZERO);
+            if(r.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0)
+                throw new RuntimeException("Illegal size of integer, will result in result larger than int max");
             return Environment.create(pow(l,r));
         }
     }

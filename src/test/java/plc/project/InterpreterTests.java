@@ -227,7 +227,32 @@ final class InterpreterTests {
                                         new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "b")))),
                                         new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "c")))),
                                         new Ast.Statement.Return(new Ast.Expression.Access(Optional.empty(), "c")))
-                                ))), BigInteger.valueOf(325))
+                                ))), BigInteger.valueOf(325)),
+                /*fun main()
+                    LET x = 5;
+                    LET y = 10;
+                    LET z = 'c';
+                    print(a);
+                    print(b);
+
+                 */
+                Arguments.of("switch scope", new Ast.Source(
+                        Arrays.asList(), Arrays.asList(
+                        new Ast.Function("main", Arrays.asList(), Arrays.asList(
+                                new Ast.Statement.Declaration("x",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(5)))),
+                                new Ast.Statement.Declaration("y",Optional.of(new Ast.Expression.Literal(BigInteger.valueOf(10)))),
+                                new Ast.Statement.Declaration("z",Optional.of(new Ast.Expression.Literal('c'))),
+                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x")))),
+                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "y")))),
+                                new Ast.Statement.Switch(new Ast.Expression.Access(Optional.empty(), "z"), Arrays.asList(
+                                        new Ast.Statement.Case(Optional.of(new Ast.Expression.Literal('a')), Arrays.asList(new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "z"), new Ast.Expression.Literal(new Character('b'))))),
+                                        new Ast.Statement.Case(Optional.of(new Ast.Expression.Literal('b')), Arrays.asList(new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "z"), new Ast.Expression.Literal(new Character('c'))))),
+                                        new Ast.Statement.Case(Optional.of(new Ast.Expression.Literal('c')), Arrays.asList(new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "z"), new Ast.Expression.Literal(new Character('f'))))),
+                                        new Ast.Statement.Case(Optional.empty(), Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "x"))))))
+                                )),
+                                new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Access(Optional.empty(), "z"))))
+                        ))
+                )), Environment.NIL.getValue())
         );
     }
     @ParameterizedTest
@@ -955,8 +980,10 @@ final class InterpreterTests {
                                                 new Ast.Statement.Return( new Ast.Expression.Access(Optional.of(new Ast.Expression.Literal(BigInteger.TEN)),"list"))))
                                 ))),
                 Arguments.of("Illegal exponentiation of non Big Int numbers",
-                        //name()
                         new Ast.Expression.Binary("^", new Ast.Expression.Literal(BigInteger.TEN), new Ast.Expression.Literal(BigDecimal.TEN))),
+                Arguments.of("Illegal exponentiation with exponent > int_max",
+                        new Ast.Expression.Binary("^", new Ast.Expression.Literal(BigInteger.valueOf(2)), new Ast.Expression.Literal(new BigDecimal("2147483648")))),
+
                 Arguments.of("No main source",
                         //name()
                         new Ast.Source(Arrays.asList(new Ast.Global("a", true, Optional.of(new Ast.Expression.Literal(BigInteger.ONE)))),
