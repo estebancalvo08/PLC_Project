@@ -61,10 +61,10 @@ final class InterpreterTests {
             log(x);
             log(y);
             IF TRUE DO
-            LET x = 3;
-            y = 4;
-            log(x);
-            log(y);
+                    LET x = 3;
+                    y = 4;
+                    log(x);
+                    log(y);
             END
             log(x);
             log(y);
@@ -95,7 +95,7 @@ final class InterpreterTests {
                         ))
                 )), Environment.NIL.getValue()),
 
-                /*       VAR x = 1;
+                /*      VAR x = 1;
                         VAR y = 2;
                         VAR z = 3;
                         FUN f(z) DO
@@ -779,13 +779,13 @@ final class InterpreterTests {
                         ),
                         new BigDecimal("0.4")
                 ),
-                // 2 ^ 32 (larger than int max)
+                // 2 ^ 2500
                 Arguments.of("Exponentiation",
                         new Ast.Expression.Binary("^",
                                 new Ast.Expression.Literal(new BigInteger("2")),
-                                new Ast.Expression.Literal(new BigInteger("32"))
+                                new Ast.Expression.Literal(new BigInteger("2500"))
                         ),
-                        new BigInteger("4294967296")
+                        new BigInteger("375828023454801203683362418972386504867736551759258677056523839782231681498337708535732725752658844333702457749526057760309227891351617765651907310968780236464694043316236562146724416478591131832593729111221580180531749232777515579969899075142213969117994877343802049421624954402214529390781647563339535024772584901607666862982567918622849636160208877365834950163790188523026247440507390382032188892386109905869706753143243921198482212075444022433366554786856559389689585638126582377224037721702239991441466026185752651502936472280911018500320375496336749951569521541850441747925844066295279671872605285792552660130702047998218334749356321677469529682551765858267502715894007887727250070780350262952377214028842297486263597879792176338220932619489509376")
                 ),
                 // negative base
                 Arguments.of("Negative base",
@@ -794,6 +794,14 @@ final class InterpreterTests {
                                 new Ast.Expression.Literal(new BigInteger("3"))
                         ),
                         new BigInteger("-8")
+                ),
+                // negative base
+                Arguments.of("Negative base, even exponent",
+                        new Ast.Expression.Binary("^",
+                                new Ast.Expression.Literal(new BigInteger("-2")),
+                                new Ast.Expression.Literal(new BigInteger("100"))
+                        ),
+                        new BigInteger("1267650600228229401496703205376")
                 ),
                 Arguments.of("Negative Exponent",
                         new Ast.Expression.Binary("^",

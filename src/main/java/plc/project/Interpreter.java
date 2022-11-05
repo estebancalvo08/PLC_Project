@@ -107,7 +107,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
             if(offset.intValue() < 0 || offset.intValue() >= temp.size())
                 throw new RuntimeException("Illegal access operation, out of bounds exception");
             temp.set(offset.intValue(), visit(ast.getValue()).getValue());
-            var.setValue(Environment.create(temp));
+            //var.setValue(Environment.create(temp));
         }
         return Environment.NIL;
     }
@@ -309,7 +309,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         Optional optional = ast.getOffset();
         if(optional.isPresent())
         {
-            BigInteger offset = requireType(BigInteger.class, Environment.create(((Ast.Expression.Literal)optional.get()).getLiteral()));
+            BigInteger offset = requireType(BigInteger.class, visit(ast.getOffset().get()));
             List<Object> temp = (List<Object>)(var.getValue().getValue());
             if(offset.intValue() < 0 || offset.intValue() >= temp.size())
                 throw new RuntimeException("Illegal access operation, out of bounds exception");
@@ -323,9 +323,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         Environment.Function fun = scope.lookupFunction(ast.getName(), ast.getArguments().size());
         List<Ast.Expression> args = ast.getArguments();
         List<Environment.PlcObject> toInvoke = new ArrayList<>();
-        for(int i =0; i < args.size(); i++) {
+        for(int i =0; i < args.size(); i++)
             toInvoke.add(Environment.create(visit(args.get(i)).getValue()));
-        }
         try{
             return fun.invoke(toInvoke);
         }
