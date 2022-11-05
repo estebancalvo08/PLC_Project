@@ -413,6 +413,51 @@ final class InterpreterTests {
                 )
         );
     }
+    @Test
+    void testDefaultCase() {
+        //tests default case with variable assignment for characters
+        //SWITCH letter CASE 'a': letter = 'b'; CASE 'b': letter = c; DEFAULT: letter = 'z'; END
+
+        Scope scope = new Scope(null);
+        scope.defineVariable("letter", true, Environment.create(new Character('f')));
+
+        List<Ast.Statement> statements = Arrays.asList(
+                new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "letter"), new Ast.Expression.Literal(new Character('z')))
+        );
+
+        List<Ast.Statement.Case> cases = Arrays.asList(
+                new Ast.Statement.Case(Optional.of(new Ast.Expression.Literal('a')), Arrays.asList(new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "letter"), new Ast.Expression.Literal(new Character('b'))))),
+                new Ast.Statement.Case(Optional.of(new Ast.Expression.Literal('b')), Arrays.asList(new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "letter"), new Ast.Expression.Literal(new Character('c'))))),
+                new Ast.Statement.Case(Optional.empty(), statements)
+        );
+
+        Ast.Statement.Switch ast = new Ast.Statement.Switch(new Ast.Expression.Access(Optional.empty(), "letter"), cases);
+        test(ast, Environment.NIL.getValue(), scope);
+        Assertions.assertEquals(new Character('z'), scope.lookupVariable("letter").getValue().getValue());
+    }
+
+    @Test
+    void testMoreSwitchStatement() {
+        // test case statement with variable declaration and variable assignment.
+        //SWITCH i CASE '1': LET x; i = 10; DEFAULT: LET x = 0; END
+        Scope scope = new Scope(null);
+        scope.defineVariable("i", true, Environment.create(BigInteger.ONE));
+
+        List<Ast.Statement> statements = Arrays.asList(
+                new Ast.Statement.Declaration("x", Optional.empty()),
+                new Ast.Statement.Assignment(new Ast.Expression.Access(Optional.empty(), "i"), new Ast.Expression.Literal(BigInteger.TEN))
+        );
+
+        List<Ast.Statement.Case> cases = Arrays.asList(
+                new Ast.Statement.Case(Optional.of(new Ast.Expression.Literal(BigInteger.ONE)), statements),
+                new Ast.Statement.Case(Optional.empty(), Arrays.asList(new Ast.Statement.Declaration("x", Optional.of(new Ast.Expression.Literal(BigInteger.ZERO)))))
+        );
+
+        Ast.Statement.Switch ast = new Ast.Statement.Switch(new Ast.Expression.Access(Optional.empty(), "i"), cases);
+        test(ast, Environment.NIL.getValue(), scope);
+        Assertions.assertEquals(BigInteger.TEN, scope.lookupVariable("i").getValue().getValue());
+    }
+
 
     @Test
     void testSwitchStatement() {
