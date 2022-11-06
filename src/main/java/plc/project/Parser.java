@@ -90,9 +90,10 @@ public final class Parser {
      */
     public Ast.Global parseList() throws ParseException {
         List<Ast.Expression> expressions = new ArrayList<>();
-        if(match(Token.Type.IDENTIFIER, "=" ,"["))
+        if(match(Token.Type.IDENTIFIER, ":",  Token.Type.IDENTIFIER, "=" ,"["))
         {
-            String name = tokens.get(-3).getLiteral(); // -3 to get Identifier
+            String name = tokens.get(-5).getLiteral(); // -5 to get Identifier
+            String type = tokens.get(-3).getLiteral();
             expressions.add(parseExpression());
             while(match(",") && tokens.has(0))
             {
@@ -103,7 +104,7 @@ public final class Parser {
                 throwError("Illegal end of list");
                 return null;
             }
-            else return new Ast.Global(name, true, Optional.of(new Ast.Expression.PlcList(expressions)));
+            else return new Ast.Global(name, type,true, Optional.of(new Ast.Expression.PlcList(expressions)));
         }
         else {
             throwError("Illegal token as list Identifier");
@@ -121,12 +122,19 @@ public final class Parser {
             return null;
         }
         String name = tokens.get(-1).getLiteral();
-        if (peek("=")) {
-            match("=");
-            Optional<Ast.Expression> value = Optional.of(parseExpression());
-            return new Ast.Global(name, true, value);
+        if(match(":",Token.Type.IDENTIFIER)) {
+            String type = tokens.get(-1).getLiteral();
+            if (peek("=")) {
+                match("=");
+                Optional<Ast.Expression> value = Optional.of(parseExpression());
+                return new Ast.Global(name, type, true, value);
+            }
+            return new Ast.Global(name, type, true, Optional.empty());
         }
-        return new Ast.Global(name, true, Optional.empty());
+        else {
+            throwError("Missing type declaration in parseMutable");
+            return null;
+        }
     }
 
     /**
@@ -139,12 +147,13 @@ public final class Parser {
             return null;
         }
         String name = tokens.get(-1).getLiteral();
-        if (!match("=")) {
-            throwError("Missing =");
+        if (!match(":", Token.Type.IDENTIFIER,"=")) {
+            throwError("Illegal immutable declaration");
             return null;
         }
+        String type = tokens.get(-2).getLiteral();
         Optional<Ast.Expression> value = Optional.of(parseExpression());
-        return new Ast.Global(name, false, value);
+        return new Ast.Global(name, type, false, value);
     }
 
     /**
@@ -163,26 +172,30 @@ public final class Parser {
         }
 
         List<String> parameters = new ArrayList<>();
+        List<String> parameterTypes = new ArrayList<>();
         List<Ast.Statement> statements = new ArrayList<>();
-
+        String type = "";
         //ex: func(), after the (, checks for the parameters.
-        if (peek(Token.Type.IDENTIFIER)) {
-            match(Token.Type.IDENTIFIER);
-            parameters.add(tokens.get(-1).getLiteral());
+        if (match(Token.Type.IDENTIFIER,":", Token.Type.IDENTIFIER)) {
+            parameters.add(tokens.get(-3).getLiteral());
+            parameterTypes.add(tokens.get(-1).getLiteral());
             //checks for more than 1 parameter
             while(peek(",")) {
                 match(",");
-                if (!match(Token.Type.IDENTIFIER)) {
-                    throwError("Missing Identifier");
+                if (!match(Token.Type.IDENTIFIER, ":", Token.Type.IDENTIFIER)) {
+                    throwError("Missing Identifier in function");
                     return null;
                 }
-                parameters.add(tokens.get(-1).getLiteral());
+                parameters.add(tokens.get(-3).getLiteral());
+                parameterTypes.add(tokens.get(-1).getLiteral());
             }
         }
         if (!match(")")) {
             throwError("Missing )");
             return null;
         }
+        if(match(":", Token.Type.IDENTIFIER))
+             type = tokens.get(-1).getLiteral();
         if (!match("DO")) {
             throwError("Missing DO");
             return null;
@@ -192,7 +205,7 @@ public final class Parser {
             throwError("Missing END");
             return null;
         }
-        return new Ast.Function(name, parameters, statements);
+        return new Ast.Function(name, parameters, parameterTypes, Optional.of(type),  statements);
     }
 
     /**
@@ -258,23 +271,24 @@ public final class Parser {
         }
         String varName = tokens.get(-1).getLiteral();
         //after the var name, if it isn't a semicolon then it is an initialization..., else it is a declaration
-        if (!match(";")){
-            //if next token isn't =, then throw error
-            if (!match("=")) {
-                throwError("Missing =");
-            }
-            else {
-                Optional<Ast.Expression> expr = Optional.of(parseExpression());
-                if (!match(";")) {
-                    throwError("Missing ;");
-                }
-                return new Ast.Statement.Declaration(varName, expr);
-            }
-        }
-        else {
+        if (match(";")){
             return new Ast.Statement.Declaration(varName, Optional.empty());
         }
-        return null;
+        else {
+            Optional name = Optional.empty();
+            Optional<Ast.Expression> expr = Optional.empty();
+            if(match(":", Token.Type.IDENTIFIER))
+                name = Optional.of(tokens.get(-1).getLiteral());
+            //if next token isn't =, then throw error
+            if (match("=")){
+                expr = Optional.of(parseExpression());
+            }
+            //Need to end with semicolon
+            if (!match(";")) {
+                throwError("Missing ;");
+            }
+            return new Ast.Statement.Declaration(varName, name, expr);
+        }
     }
 
     /**
