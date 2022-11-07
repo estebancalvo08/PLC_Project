@@ -173,6 +173,23 @@ public final class AnalyzerTests {
                                 init(new Ast.Expression.Literal(BigInteger.ONE), ast -> ast.setType(Environment.Type.INTEGER))
                         )), ast -> ast.setVariable(new Environment.Variable("name", "name", Environment.Type.INTEGER, true, Environment.NIL)))
                 ),
+                Arguments.of("Initialization and declaration",
+                        // LET name : Integer = 1;
+                        new Ast.Statement.Declaration("name", Optional.of("Integer"), Optional.of(new Ast.Expression.Literal(BigInteger.ONE))),
+                        init(new Ast.Statement.Declaration("name", Optional.of("Integer"), Optional.of(
+                                init(new Ast.Expression.Literal(BigInteger.ONE), ast -> ast.setType(Environment.Type.INTEGER))
+                        )), ast -> ast.setVariable(new Environment.Variable("name", "name", Environment.Type.INTEGER, true, Environment.NIL)))
+                ),
+                Arguments.of("Initialization and declaration - type and return value mismatch",
+                        // LET name : Integer = 1;
+                        new Ast.Statement.Declaration("name", Optional.of("Integer"), Optional.of(new Ast.Expression.Literal(BigDecimal.ONE))),
+                        null
+                ),
+                Arguments.of("Wrong type and value returned",
+                        // LET name = 1;
+                        new Ast.Statement.Declaration("name", Optional.of("Integer"), Optional.of(new Ast.Expression.Literal(BigDecimal.ONE))),
+                        null
+                ),
                 Arguments.of("Missing Type",
                         // LET name;
                         new Ast.Statement.Declaration("name", Optional.empty(), Optional.empty()),

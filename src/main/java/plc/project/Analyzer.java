@@ -4,8 +4,10 @@ import org.omg.CORBA.portable.ValueInputStream;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.spec.EncodedKeySpec;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -28,14 +30,51 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Source ast) {
-        throw new UnsupportedOperationException();  // TODO
+        List<Ast.Global> globals = ast.getGlobals();
+        List<Ast.Function> functions = ast.getFunctions();
+        for(Ast.Global global : globals)
+            visit(global);
+        for(Ast.Function function : functions)
+            visit(function);
+        //todo finish function so this part works
+        return null;
     }
 
     @Override
     public Void visit(Ast.Global ast) {
-        throw new UnsupportedOperationException();  // TODO
+        Optional value = ast.getValue();
+        //If there is a value, visit value and make sure returned value type is same as declaration type
+        if(value.isPresent()) {
+            visit(ast.getValue().get());
+            if (!ast.getTypeName().equals(ast.getValue().get().getType().getName()))
+                throw new RuntimeException("Value type does not match declared variable type");
+        }
+        Environment.Type type = getType(ast.getTypeName());
+        Environment.Variable var = new Environment.Variable(ast.getName(), ast.getName(), type, ast.getMutable() ,Environment.NIL);
+        scope.defineVariable(ast.getName(), ast.getName(), type, ast.getMutable(), Environment.NIL);
+        ast.setVariable(var);
+        return null;
     }
-
+    private Environment.Type getType(String TypeName)
+    {
+        if(TypeName.equals("Integer"))
+            return Environment.Type.INTEGER;
+        else if(TypeName.equals("String"))
+            return Environment.Type.STRING;
+        else if(TypeName.equals("Boolean"))
+            return Environment.Type.BOOLEAN;
+        else if(TypeName.equals("Character"))
+            return Environment.Type.CHARACTER;
+        else if(TypeName.equals("Any"))
+            return Environment.Type.ANY;
+        else if(TypeName.equals("Nil"))
+            return Environment.Type.NIL;
+        else if(TypeName.equals("Comparable"))
+            return Environment.Type.COMPARABLE;
+        else if(TypeName.equals("Decimal"))
+            return Environment.Type.DECIMAL;
+        else throw new RuntimeException("Illegal variable type");
+    }
     @Override
     public Void visit(Ast.Function ast) {
         throw new UnsupportedOperationException();  // TODO
@@ -51,12 +90,44 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.Declaration ast) {
-        throw new UnsupportedOperationException();  // TODO
+        Optional value = ast.getValue();
+        Environment.Type type;
+        //let var = value
+        if(value.isPresent() && !ast.getTypeName().isPresent()) {
+            visit(ast.getValue().get());
+            type = (ast.getValue().get().getType());
+        }
+        //let var : type
+        else if(!value.isPresent() && ast.getTypeName().isPresent())
+            type = getType(ast.getTypeName().get());
+        //let var : type = value
+        else if(value.isPresent() && ast.getTypeName().isPresent())
+        {
+            visit(ast.getValue().get());
+            if(!ast.getTypeName().get().equals(ast.getValue().get().getType().getName()))
+                throw new RuntimeException("Returned value is not same as declared type");
+            type = getType(ast.getTypeName().get());
+        }
+        //let var
+        else
+            throw new RuntimeException("Missing type and assignment");
+        Environment.Variable var = new Environment.Variable(ast.getName(), ast.getName(), type, true, Environment.NIL);
+        ast.setVariable(var);
+        scope.defineVariable(ast.getName(), ast.getName(), type, true, Environment.NIL);
+        return null;
+
     }
 
     @Override
     public Void visit(Ast.Statement.Assignment ast) {
-        throw new UnsupportedOperationException();  // TODO
+        if(!(ast.getReceiver() instanceof Ast.Expression.Access))
+            throw new RuntimeException("Receiver is not access");
+        //initialize the receiver and value types
+        visit(ast.getReceiver());
+        visit(ast.getValue());
+        if(!ast.getReceiver().getType().equals(ast.getValue().getType()))
+            throw new RuntimeException("Receiver and value are of different types");
+        return null;
     }
 
     @Override
@@ -198,7 +269,18 @@ public final class Analyzer implements Ast.Visitor<Void> {
     }
 
     public static void requireAssignable(Environment.Type target, Environment.Type type) {
-        if(!target.equals(type))
+        System.out.println(target);
+        System.out.println(type);
+        if(target.equals(Environment.Type.ANY))
+        {}
+        else if(target.equals(Environment.Type.COMPARABLE))
+        {
+            if(!(type.equals(Environment.Type.INTEGER) || type.equals(Environment.Type.DECIMAL) || type.equals(Environment.Type.CHARACTER) || type.equals(Environment.Type.STRING)))
+                throw new RuntimeException("Illegal comparison of comparable");
+        }
+        else if(type.equals(Environment.Type.COMPARABLE) || type.equals(Environment.Type.ANY))
+            throw new RuntimeException("Illegal type on RHS");
+        else if(!target.equals(type))
             throw new RuntimeException("Types do not match. Target is of type: " + target.getName() + ". RHS is of type: " + type.getName());
     }
 
