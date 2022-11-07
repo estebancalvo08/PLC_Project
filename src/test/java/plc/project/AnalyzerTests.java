@@ -374,6 +374,55 @@ public final class AnalyzerTests {
                                 )
                         )
                 ),
+                Arguments.of("Condition Value Type Match",
+                        // SWITCH letter CASE 'y':  letter = 'a'; DEFAULT letter = 'b'; END
+                        new Ast.Statement.Switch(
+                                new Ast.Expression.Access(Optional.empty(),"letter"),
+                                Arrays.asList(
+                                        new Ast.Statement.Case(
+                                                Optional.of(new Ast.Expression.Literal('y')),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Assignment(
+                                                                new Ast.Expression.Access(Optional.empty(), "letter"),
+                                                                new Ast.Expression.Literal('a')
+                                                        )
+                                                )
+                                        ),
+                                        new Ast.Statement.Case(
+                                                Optional.empty(),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Assignment(
+                                                                new Ast.Expression.Access(Optional.empty(), "letter"),
+                                                                new Ast.Expression.Literal('b')
+                                                        )
+                                                )
+                                        )
+                                )
+                        ),
+                        new Ast.Statement.Switch(
+                                init(new Ast.Expression.Access(Optional.empty(), "letter"), ast -> ast.setVariable(new Environment.Variable("letter", "letter", Environment.Type.CHARACTER, true, Environment.create('y')))),
+                                Arrays.asList(
+                                        new Ast.Statement.Case(
+                                                Optional.of(init(new Ast.Expression.Literal('y'), ast -> ast.setType(Environment.Type.CHARACTER))),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Assignment(
+                                                                init(new Ast.Expression.Access(Optional.empty(), "letter"), ast -> ast.setVariable(new Environment.Variable("letter", "letter", Environment.Type.CHARACTER, true, Environment.create('y')))),
+                                                                init(new Ast.Expression.Literal('a'), ast -> ast.setType(Environment.Type.CHARACTER))
+                                                        )
+                                                )
+                                        ),
+                                        new Ast.Statement.Case(
+                                                Optional.empty(),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Assignment(
+                                                                init(new Ast.Expression.Access(Optional.empty(), "letter"), ast -> ast.setVariable(new Environment.Variable("letter", "letter", Environment.Type.CHARACTER, true, Environment.create('y')))),
+                                                                init(new Ast.Expression.Literal('b'), ast -> ast.setType(Environment.Type.CHARACTER))
+                                                        )
+                                                )
+                                        )
+                                )
+                        )
+                ),
                 Arguments.of("Condition Value Type Mismatch",
                         // SWITCH number CASE 'y': print("yes"); letter = 'n'; DEFAULT: print("no"); END
                         new Ast.Statement.Switch(

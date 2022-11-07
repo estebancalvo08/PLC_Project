@@ -132,17 +132,62 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.If ast) {
-        throw new UnsupportedOperationException();  // TODO
+        visit(ast.getCondition());
+        requireAssignable(Environment.Type.BOOLEAN, ast.getCondition().getType());
+        if(ast.getThenStatements().isEmpty())
+            throw new RuntimeException("Then statement is empty for if");
+        List<Ast.Statement> thenStatements = ast.getThenStatements();
+        List<Ast.Statement> elseStatements = ast.getElseStatements();
+        Scope curr = scope;
+        if(!thenStatements.isEmpty())
+        {
+            scope = new Scope(curr);
+            for(Ast.Statement statements : thenStatements)
+                visit(statements);
+        }
+        scope = curr;
+        if(!elseStatements.isEmpty())
+        {
+            scope = new Scope(curr);
+            for(Ast.Statement statements : elseStatements)
+                visit(statements);
+        }
+        scope = curr;
+        return null;
     }
 
     @Override
     public Void visit(Ast.Statement.Switch ast) {
-        throw new UnsupportedOperationException();  // TODO
+        Ast.Expression condition  = ast.getCondition();
+        visit(condition);
+        List<Ast.Statement.Case> cases = ast.getCases();
+        int i = 0;
+        for(; i < cases.size() -1 ;i++)
+        {
+            if(cases.get(i).getValue().isPresent())
+            {
+                if(!cases.get(i).getValue().get().getType().equals(condition.getType()))
+                    throw new RuntimeException("Case type is not same as switch statement type");
+                visit(cases.get(i));
+            }
+            else
+                throw new RuntimeException("Illegal Default case not at end of Switch");
+        }
+        //If last cases has value, error
+        if(cases.get(i).getValue().isPresent())
+            throw new RuntimeException("Illegal switch without default");
+        else visit(cases.get(i));
+        return null;
     }
 
     @Override
     public Void visit(Ast.Statement.Case ast) {
-        throw new UnsupportedOperationException();  // TODO
+        scope = new Scope(scope);
+        List<Ast.Statement> statements = ast.getStatements();
+        for(Ast.Statement statement : statements)
+            visit(statement);
+        scope = scope.getParent();
+        return null;
     }
 
     @Override
@@ -269,8 +314,6 @@ public final class Analyzer implements Ast.Visitor<Void> {
     }
 
     public static void requireAssignable(Environment.Type target, Environment.Type type) {
-        System.out.println(target);
-        System.out.println(type);
         if(target.equals(Environment.Type.ANY))
         {}
         else if(target.equals(Environment.Type.COMPARABLE))
