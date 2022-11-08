@@ -1,4 +1,6 @@
 package plc.project;
+import com.sun.org.apache.xpath.internal.operations.Bool;
+
 import javax.swing.plaf.IconUIResource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -55,14 +57,11 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                 for (int i = 0; i < params.size(); i++)
                     scope.defineVariable(params.get(i), true, Environment.create(args.get(i).getValue()));
                 for (Ast.Statement statement : ast.getStatements()) {
-                    if (statement instanceof Ast.Statement.Return) {
-                        try {
-                            return visit(statement);
-                        } catch (Return e) {
-                            return e.value;
-                        }
-                    } else
+                    try {
                         visit(statement);
+                    } catch (Return e) {
+                        return e.value;
+                    }
                 }
             }
             finally {
@@ -199,6 +198,8 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         if(operator.equals("&&"))
         {
             Boolean l = requireType(Boolean.class, visit(left));
+            if(!l)
+                return Environment.create(false);
             Boolean r = requireType(Boolean.class, visit(right));
             return Environment.create(Boolean.valueOf(l && r));
         }
@@ -233,13 +234,10 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
         }
         if(operator.equals("!=") || operator.equals("=="))
         {
-            Boolean equals = operator.equals("==") ? true : false;
+            Boolean equals = operator.equals("==");
             Environment.PlcObject l = visit(left);
             Environment.PlcObject r = visit(right);
-            Boolean type = l.getValue().getClass().equals(r.getValue().getClass());
-            if(!type)
-                throw new RuntimeException("Illegal Comparison of different classes");
-            return equals ? Environment.create(Boolean.valueOf(l.getValue().equals(r.getValue()))) : Environment.create(Boolean.valueOf(!l.getValue().equals(r.getValue())));
+            return equals ? Environment.create(l.getValue().equals(r.getValue())) : Environment.create(!l.getValue().equals(r.getValue()));
         }
         if(operator.equals("+"))
         {
@@ -295,16 +293,16 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
                return Environment.create(BigInteger.ZERO);
             if(r.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0)
                 throw new RuntimeException("Illegal size of integer, will result in result larger than int max");
-            return Environment.create(pow(l,r));
+            return Environment.create(l.pow(r.intValue()));
         }
     }
-    private BigInteger pow(BigInteger base, BigInteger exponent)
-    {
-        BigInteger res = BigInteger.ONE;
-        for(BigInteger i = BigInteger.ZERO; i.compareTo(exponent) != 0; i = i.add(BigInteger.ONE))
-            res = res.multiply(base);
-        return res;
-    }
+//    private BigInteger pow(BigInteger base, BigInteger exponent)
+//    {
+//        BigInteger res = BigInteger.ONE;
+//        for(BigInteger i = BigInteger.ZERO; i.compareTo(exponent) != 0; i = i.add(BigInteger.ONE))
+//            res = res.multiply(base);
+//        return res;
+//    }
     @Override
     public Environment.PlcObject visit(Ast.Expression.Access ast) {
         Environment.Variable var = scope.lookupVariable(ast.getName());

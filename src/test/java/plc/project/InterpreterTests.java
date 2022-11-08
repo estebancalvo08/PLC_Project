@@ -305,6 +305,15 @@ final class InterpreterTests {
                         BigInteger.ZERO
                 ),
                 // FUN square(x) DO RETURN x * x; END
+                Arguments.of("early return",
+                        new Ast.Function("func", Arrays.asList(), Arrays.asList(
+                                new Ast.Statement.If(new Ast.Expression.Literal(true), Arrays.asList(
+                                new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ZERO))), Arrays.asList()),
+                                new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ONE))
+                        )),
+                        Arrays.asList(),
+                        BigInteger.ZERO
+                ),
                 Arguments.of("Arguments",
                         new Ast.Function("square", Arrays.asList("x"), Arrays.asList(
                                 new Ast.Statement.Return(new Ast.Expression.Binary("*",
@@ -633,6 +642,13 @@ final class InterpreterTests {
                         ),
                         false
                 ),
+                Arguments.of("And short circuit",
+                        new Ast.Expression.Binary("&&",
+                                new Ast.Expression.Literal(false),
+                                new Ast.Expression.Access(Optional.empty(), "undefined")
+                        ),
+                        false
+                ),
                 Arguments.of("True and True",
                         new Ast.Expression.Binary("&&",
                                 new Ast.Expression.Literal(true),
@@ -728,7 +744,14 @@ final class InterpreterTests {
                         ),
                         true
                 ),
-
+                // 1 != "1"
+                Arguments.of("Not equal distinct types",
+                        new Ast.Expression.Binary("!=",
+                                new Ast.Expression.Literal(BigInteger.ONE),
+                                new Ast.Expression.Literal("1")
+                        ),
+                        true
+                ),
                 // "hello there" =="hello there"
                 Arguments.of("Equal true strings",
                         new Ast.Expression.Binary("==",
