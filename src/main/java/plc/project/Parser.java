@@ -214,7 +214,7 @@ public final class Parser {
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
         List<Ast.Statement> exprs = new ArrayList<>();
-        while(tokens.has(0) && !peek("END") && !peek("ELSE") && !peek("DEFAULT")){
+        while(tokens.has(0) && !peek("END") && !peek("ELSE") && !peek("DEFAULT") && !peek("CASE")){
             exprs.add(parseStatement());
         }
         return exprs;
@@ -252,7 +252,7 @@ public final class Parser {
                     return new Ast.Statement.Expression(left);
                 }
                 else {
-                    throwError("Illegal Assignment statement");
+                    throwError("Illegal Assignment statement: missing semicolon");
                 }
             }
             return null;
@@ -329,7 +329,6 @@ public final class Parser {
     public Ast.Statement.Switch parseSwitchStatement() throws ParseException {
         Ast.Expression condition = parseExpression();
         List<Ast.Statement.Case> cases = new ArrayList<>();
-
         while (peek("CASE")) {
             //match("CASE");
             cases.add(parseCaseStatement());
@@ -339,6 +338,11 @@ public final class Parser {
             return null;
         }
         cases.add(parseCaseStatement());
+        if(!match("END"))
+        {
+            throwError("Illegal End of Switch case");
+            return null;
+        }
         return new Ast.Statement.Switch(condition, cases);
     }
 

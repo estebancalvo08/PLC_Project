@@ -310,6 +310,14 @@ final class ParserTests {
                         Arrays.asList(new Token(Token.Type.CHARACTER, "'c'", 0)),
                         new Ast.Expression.Literal('c')
                 ),
+                Arguments.of("Character Literal",
+                        Arrays.asList(new Token(Token.Type.CHARACTER, "'\\\\'", 0)),
+                        new Ast.Expression.Literal('\\')
+                ),
+                Arguments.of("string escape",
+                        Arrays.asList(new Token(Token.Type.STRING, "\"\\\\\"", 0)),
+                        new Ast.Expression.Literal("\\")
+                ),
                 Arguments.of("String Literal",
                         Arrays.asList(new Token(Token.Type.STRING, "\"string\"", 0)),
                         new Ast.Expression.Literal("string")
@@ -439,6 +447,55 @@ final class ParserTests {
         );
     }
 
+    @ParameterizedTest
+    @MethodSource
+    void testSwitchStatement(String test, List<Token> tokens, Ast.Statement.Switch expected) {
+        test(tokens, expected, Parser::parseStatement);
+    }
+
+    private static Stream<Arguments> testSwitchStatement() {
+        return Stream.of(
+                Arguments.of("Multiple cases",
+                        Arrays.asList(new Token(Token.Type.IDENTIFIER, "SWITCH", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr", 0),
+                                new Token(Token.Type.IDENTIFIER, "CASE", 1),
+                                new Token(Token.Type.IDENTIFIER, "expr1", 2),
+                                new Token(Token.Type.OPERATOR, ":", 3),
+                                new Token(Token.Type.IDENTIFIER, "stmt1", 4),
+                                new Token(Token.Type.OPERATOR, ";", 5),
+                                new Token(Token.Type.IDENTIFIER, "CASE", 6),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 7),
+                                new Token(Token.Type.OPERATOR, ":", 8),
+                                new Token(Token.Type.IDENTIFIER, "stmt2", 9),
+                                new Token(Token.Type.OPERATOR, ";", 10),
+                                new Token(Token.Type.IDENTIFIER, "CASE", 11),
+                                new Token(Token.Type.IDENTIFIER, "expr3", 12),
+                                new Token(Token.Type.OPERATOR, ":", 13),
+                                new Token(Token.Type.IDENTIFIER, "stmt3", 14),
+                                new Token(Token.Type.OPERATOR, ";", 15),
+                                new Token(Token.Type.IDENTIFIER, "DEFAULT", 16),
+                                new Token(Token.Type.IDENTIFIER, "stmt4", 17),
+                                new Token(Token.Type.OPERATOR, ";", 18),
+                                new Token(Token.Type.IDENTIFIER, "END", 19)
+                        ),
+                        new Ast.Expression.Statement.Switch(new Ast.Expression.Access(Optional.empty(), "expr"), Arrays.asList(
+                                new Ast.Statement.Case(Optional.of(new Ast.Expression.Access(Optional.empty(), "expr1")), Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt1")))),
+                                new Ast.Statement.Case(Optional.of(new Ast.Expression.Access(Optional.empty(), "expr2")), Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt2")))),
+                                new Ast.Statement.Case(Optional.of(new Ast.Expression.Access(Optional.empty(), "expr3")), Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt3")))),
+                                new Ast.Statement.Case(Optional.empty(), Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt4"))))
+                                )
+                        )
+                ),
+                Arguments.of("No end of Switch",
+                        Arrays.asList(new Token(Token.Type.IDENTIFIER, "SWITCH", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr", 0),
+                                new Token(Token.Type.IDENTIFIER, "DEFAULT", 1),
+                                new Token(Token.Type.IDENTIFIER, "stmt1", 4),
+                                new Token(Token.Type.OPERATOR, ";", 4)),
+                                null
+                )
+        );
+    }
     @ParameterizedTest
     @MethodSource
     void testFunctionExpression(String test, List<Token> tokens, Ast.Expression.Function expected) {
