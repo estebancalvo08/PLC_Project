@@ -197,7 +197,9 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.Return ast) {
-        throw new UnsupportedOperationException();  // TODO
+        //saved return type in variable to be used in function.
+        Environment.Variable var = scope.defineVariable("return", "return", ast.getValue().getType(), true, Environment.NIL);
+        return null;
     }
 
     @Override
@@ -300,17 +302,38 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Expression.Access ast) {
-        throw new UnsupportedOperationException();  // TODO
+        Environment.Variable var = scope.lookupVariable(ast.getName());
+        Optional optional = ast.getOffset();
+        if (optional.isPresent()) {
+            //require offset isnt an int, throw error
+            //requireAssignable(Environment.Type.INTEGER, optional.get().)
+            if (optional.get() instanceof Integer) {
+                throw new RuntimeException("offset is not an integer");
+            }
+        }
+        ast.setVariable(var);
+        return null;
     }
 
     @Override
     public Void visit(Ast.Expression.Function ast) {
-        throw new UnsupportedOperationException();  // TODO
+        Environment.Function fun = scope.lookupFunction(ast.getName(), ast.getArguments().size());
+        //List<Ast.Expression> arguments = ast.getArguments();
+        //check every argument type matches parameter
+        for (int i = 0; i < ast.getArguments().size(); i++) {
+            requireAssignable(fun.getParameterTypes().get(i), ast.getArguments().get(i).getType());
+        }
+        ast.setFunction(fun);
+        return null;
     }
 
     @Override
     public Void visit(Ast.Expression.PlcList ast) {
-        throw new UnsupportedOperationException();  // TODO
+        List<Ast.Expression> vals = ast.getValues();
+        for (Ast.Expression val : vals) {
+            requireAssignable(ast.getType(), val.getType());
+        }
+        return null;
     }
 
     public static void requireAssignable(Environment.Type target, Environment.Type type) {
