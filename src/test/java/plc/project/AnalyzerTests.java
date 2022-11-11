@@ -110,6 +110,20 @@ public final class AnalyzerTests {
                                         Optional.of(init(new Ast.Expression.PlcList(Arrays.asList(init(new Ast.Expression.Literal(BigInteger.ONE), ast ->ast.setType(Environment.Type.INTEGER)), init(new Ast.Expression.Literal(new BigDecimal("2.0")), ast -> ast.setType(Environment.Type.DECIMAL)))),
                                                 ast -> ast.setType(Environment.Type.ANY)))),
                                 ast ->ast.setVariable(new Environment.Variable("list", "list", Environment.Type.ANY, true, Environment.NIL)))),
+                Arguments.of("Valid List Any",
+                        // LIST list: Any = ["apple", "pear"];
+                        new Ast.Global("list", "Any", true, Optional.of(new Ast.Expression.PlcList(Arrays.asList(new Ast.Expression.Literal("apple"), new Ast.Expression.Literal("pear"))))),
+                        init(new Ast.Global("list", "Any", true,
+                                        Optional.of(init(new Ast.Expression.PlcList(Arrays.asList(init(new Ast.Expression.Literal("apple"), ast ->ast.setType(Environment.Type.STRING)), init(new Ast.Expression.Literal("pear"), ast -> ast.setType(Environment.Type.STRING)))),
+                                                ast -> ast.setType(Environment.Type.ANY)))),
+                                ast ->ast.setVariable(new Environment.Variable("list", "list", Environment.Type.ANY, true, Environment.NIL)))),
+                Arguments.of("Valid List chars",
+                        // LIST list: Any = ["a", "b"];
+                        new Ast.Global("list", "Character", true, Optional.of(new Ast.Expression.PlcList(Arrays.asList(new Ast.Expression.Literal('a'), new Ast.Expression.Literal('b'))))),
+                        init(new Ast.Global("list", "Character", true,
+                                        Optional.of(init(new Ast.Expression.PlcList(Arrays.asList(init(new Ast.Expression.Literal('a'), ast ->ast.setType(Environment.Type.CHARACTER)), init(new Ast.Expression.Literal('b'), ast -> ast.setType(Environment.Type.CHARACTER)))),
+                                                ast -> ast.setType(Environment.Type.CHARACTER)))),
+                                ast ->ast.setVariable(new Environment.Variable("list", "list", Environment.Type.CHARACTER, true, Environment.NIL)))),
                 Arguments.of("Unknown Type",
                         // VAR name: Unknown;
                         new Ast.Global("name", "Unknown", true, Optional.empty()),
@@ -511,17 +525,17 @@ public final class AnalyzerTests {
                         init(new Ast.Expression.Literal(true), ast -> ast.setType(Environment.Type.BOOLEAN))
                 ),
                 Arguments.of("Character",
-                        // TRUE
+                        // 'c'
                         new Ast.Expression.Literal('c'),
                         init(new Ast.Expression.Literal('c'), ast -> ast.setType(Environment.Type.CHARACTER))
                 ),
                 Arguments.of("String",
-                        // TRUE
+                        // "string"
                         new Ast.Expression.Literal("string"),
                         init(new Ast.Expression.Literal("string"), ast -> ast.setType(Environment.Type.STRING))
                 ),
                 Arguments.of("Null",
-                        // TRUE
+                        // null
                         new Ast.Expression.Literal(null),
                         init(new Ast.Expression.Literal(null), ast -> ast.setType(Environment.Type.NIL))
                 ),
@@ -584,19 +598,18 @@ public final class AnalyzerTests {
                                     init(new Ast.Expression.Literal(BigInteger.TEN), ast -> ast.setType(Environment.Type.INTEGER))
                             ), ast -> ast.setType(Environment.Type.INTEGER))
                     ), ast -> ast.setType(Environment.Type.INTEGER))),
-
-                    Arguments.of("(1 < 10)",
-                            // TRUE && FALSE
-                            new Ast.Expression.Group(new Ast.Expression.Binary("<",
-                                    new Ast.Expression.Literal(BigInteger.ONE),
-                                    new Ast.Expression.Literal(BigInteger.TEN)
-                            )),
-                            init(new Ast.Expression.Group(
-                                    init(new Ast.Expression.Binary("<",
-                                            init(new Ast.Expression.Literal(BigInteger.ONE), ast -> ast.setType(Environment.Type.INTEGER)),
-                                            init(new Ast.Expression.Literal(BigInteger.TEN), ast -> ast.setType(Environment.Type.INTEGER))
-                                    ), ast -> ast.setType(Environment.Type.BOOLEAN))
-                            ), ast -> ast.setType(Environment.Type.BOOLEAN))),
+                Arguments.of("(1 < 10)",
+                        // TRUE && FALSE
+                        new Ast.Expression.Group(new Ast.Expression.Binary("<",
+                                new Ast.Expression.Literal(BigInteger.ONE),
+                                new Ast.Expression.Literal(BigInteger.TEN)
+                        )),
+                        init(new Ast.Expression.Group(
+                                init(new Ast.Expression.Binary("<",
+                                        init(new Ast.Expression.Literal(BigInteger.ONE), ast -> ast.setType(Environment.Type.INTEGER)),
+                                        init(new Ast.Expression.Literal(BigInteger.TEN), ast -> ast.setType(Environment.Type.INTEGER))
+                                ), ast -> ast.setType(Environment.Type.BOOLEAN))
+                        ), ast -> ast.setType(Environment.Type.BOOLEAN))),
                 Arguments.of("(1 < 10 || TRUE)",
                         // TRUE && FALSE
                         new Ast.Expression.Group(new Ast.Expression.Binary("||",
@@ -645,6 +658,14 @@ public final class AnalyzerTests {
                         ),
                         null
                 ),
+                Arguments.of("Logical AND Invalid Type",
+                        // TRUE && 1
+                        new Ast.Expression.Binary("&&",
+                                new Ast.Expression.Literal(Boolean.TRUE),
+                                new Ast.Expression.Literal(BigInteger.ONE)
+                        ),
+                        null
+                ),
                 Arguments.of("Less than Valid",
                         new Ast.Expression.Binary("<",
                                 new Ast.Expression.Literal(BigInteger.ONE),
@@ -655,7 +676,13 @@ public final class AnalyzerTests {
                                 init(new Ast.Expression.Literal(BigInteger.TEN), ast -> ast.setType(Environment.Type.INTEGER))
                         ), ast -> ast.setType(Environment.Type.BOOLEAN))
                 ),
-                Arguments.of("Greater than Valid",
+                Arguments.of("Less than invalid",
+                        new Ast.Expression.Binary("<",
+                                new Ast.Expression.Literal(BigInteger.ONE),
+                                new Ast.Expression.Literal('a')
+                        ),
+                        null
+                ),                Arguments.of("Greater than Valid",
                         new Ast.Expression.Binary(">",
                                 new Ast.Expression.Literal(BigDecimal.ONE),
                                 new Ast.Expression.Literal(BigDecimal.TEN)
@@ -674,6 +701,13 @@ public final class AnalyzerTests {
                                 init(new Ast.Expression.Literal("one"), ast -> ast.setType(Environment.Type.STRING)),
                                 init(new Ast.Expression.Literal("two"), ast -> ast.setType(Environment.Type.STRING))
                         ), ast -> ast.setType(Environment.Type.BOOLEAN))
+                ),
+                Arguments.of("Equals than invalid",
+                        new Ast.Expression.Binary("==",
+                                new Ast.Expression.Literal("one"),
+                                new Ast.Expression.Literal(BigInteger.ONE)
+                        ),
+                        null
                 ),
                 Arguments.of("Not equals than Valid",
                         new Ast.Expression.Binary("!=",
@@ -703,6 +737,17 @@ public final class AnalyzerTests {
                                 init(new Ast.Expression.Literal(BigInteger.TEN), ast -> ast.setType(Environment.Type.INTEGER))
                         ), ast -> ast.setType(Environment.Type.STRING))
                 ),
+                Arguments.of("String Concatenation other side",
+                        // 4 + "twenty"
+                        new Ast.Expression.Binary("+",
+                                new Ast.Expression.Literal(BigInteger.valueOf(4)),
+                                new Ast.Expression.Literal("twenty")
+                        ),
+                        init(new Ast.Expression.Binary("+",
+                                init(new Ast.Expression.Literal(BigInteger.valueOf(4)), ast -> ast.setType(Environment.Type.INTEGER)),
+                                init(new Ast.Expression.Literal("twenty"), ast -> ast.setType(Environment.Type.STRING))
+                        ), ast -> ast.setType(Environment.Type.STRING))
+                ),
                 Arguments.of("Integer Addition",
                         // 1 + 10
                         new Ast.Expression.Binary("+",
@@ -723,7 +768,7 @@ public final class AnalyzerTests {
                         null
                 ),
                 Arguments.of("Integer subtraction",
-                        // 1 + 1.0
+                        // 1 - 1.0
                         new Ast.Expression.Binary("-",
                                 new Ast.Expression.Literal(BigInteger.ONE),
                                 new Ast.Expression.Literal(BigInteger.TEN)
@@ -734,7 +779,7 @@ public final class AnalyzerTests {
                         ), ast -> ast.setType(Environment.Type.INTEGER))
                 ),
                 Arguments.of("Decimal multiplication",
-                        // 1 + 1.0
+                        // 1 * 1.0
                         new Ast.Expression.Binary("*",
                                 new Ast.Expression.Literal(BigDecimal.ONE),
                                 new Ast.Expression.Literal(BigDecimal.TEN)
@@ -745,7 +790,7 @@ public final class AnalyzerTests {
                         ), ast -> ast.setType(Environment.Type.DECIMAL))
                 ),
                 Arguments.of("Decimal Division",
-                        // 1 + 1.0
+                        // 1 / 1.0
                         new Ast.Expression.Binary("/",
                                 new Ast.Expression.Literal(BigDecimal.ONE),
                                 new Ast.Expression.Literal(BigDecimal.TEN)
@@ -772,7 +817,7 @@ public final class AnalyzerTests {
                         null
                 ),
                 Arguments.of("Exponentiation",
-                        // 1 + 10
+                        // 1 ^ 10
                         new Ast.Expression.Binary("^",
                                 new Ast.Expression.Literal(BigInteger.TEN),
                                 new Ast.Expression.Literal(BigInteger.TEN)
@@ -783,7 +828,7 @@ public final class AnalyzerTests {
                         ), ast -> ast.setType(Environment.Type.INTEGER))
                 ),
                 Arguments.of("Exponentiation with wrong types",
-                        // 1 + 10
+                        // 1 ^ 10
                         new Ast.Expression.Binary("^",
                                 new Ast.Expression.Literal(BigDecimal.TEN),
                                 new Ast.Expression.Literal(BigInteger.TEN)
