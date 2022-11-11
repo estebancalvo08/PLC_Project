@@ -5,6 +5,7 @@ import org.omg.CORBA.portable.ValueInputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.security.spec.EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +37,6 @@ public final class Analyzer implements Ast.Visitor<Void> {
             visit(global);
         for(Ast.Function function : functions)
             visit(function);
-        //todo finish function so this part works
         return null;
     }
 
@@ -45,6 +45,9 @@ public final class Analyzer implements Ast.Visitor<Void> {
         Optional value = ast.getValue();
         //If there is a value, visit value and make sure returned value type is same as declaration type
         if(value.isPresent()) {
+            //if list, assign type beforehand so PLC list function can check values within the list
+            if(value.get() instanceof Ast.Expression.PlcList)
+                ((Ast.Expression.PlcList) value.get()).setType(getType(ast.getTypeName()));
             visit(ast.getValue().get());
             if (!ast.getTypeName().equals(ast.getValue().get().getType().getName()))
                 throw new RuntimeException("Value type does not match declared variable type");
@@ -77,7 +80,32 @@ public final class Analyzer implements Ast.Visitor<Void> {
     }
     @Override
     public Void visit(Ast.Function ast) {
-        throw new UnsupportedOperationException();  // TODO
+        List<Ast.Statement> statements = ast.getStatements();
+        List<String> params  = ast.getParameters();
+        List<String> paramTypesString = ast.getParameterTypeNames();
+        List<Environment.Type> paramTypes = new ArrayList<>();
+        String name = ast.getName();
+        Environment.Type returnType = Environment.Type.NIL;
+        for(int i = 0; i < params.size(); i++) {
+            paramTypes.add(getType(paramTypesString.get(i)));
+            scope.defineVariable(params.get(i), params.get(i), paramTypes.get(i), true, Environment.NIL);
+        }
+        if(ast.getReturnTypeName().isPresent())
+             returnType = getType(ast.getReturnTypeName().get());
+        //public Function(String name, List<String> parameters, List<String> parameterTypeNames, Optional<String> returnTypeName, List<Statement> statements
+        //public Environment.Function defineFunction(String name, String jvmName, List<Environment.Type> parameterTypes, Environment.Type returnType, java.util.function.Function<List<Environment.PlcObject>, Environment.PlcObject> function) {
+        scope.defineFunction(name, name, paramTypes, returnType, args -> Environment.NIL);
+        ast.setFunction(scope.lookupFunction(name, ast.getParameters().size()));
+        scope = new Scope(scope);
+        for(Ast.Statement statement : statements)
+        {
+            visit(statement);
+            if(statement instanceof Ast.Statement.Return && !((Ast.Statement.Return) statement).getValue().getType().equals(returnType)) {
+                throw new RuntimeException("Return type does not match function return type");
+            }
+        }
+        scope = scope.getParent();
+        return null;
     }
 
     @Override
@@ -139,12 +167,9 @@ public final class Analyzer implements Ast.Visitor<Void> {
         List<Ast.Statement> thenStatements = ast.getThenStatements();
         List<Ast.Statement> elseStatements = ast.getElseStatements();
         Scope curr = scope;
-        if(!thenStatements.isEmpty())
-        {
-            scope = new Scope(curr);
-            for(Ast.Statement statements : thenStatements)
-                visit(statements);
-        }
+        scope = new Scope(curr);
+        for(Ast.Statement statements : thenStatements)
+            visit(statements);
         scope = curr;
         if(!elseStatements.isEmpty())
         {
@@ -166,8 +191,11 @@ public final class Analyzer implements Ast.Visitor<Void> {
         {
             if(cases.get(i).getValue().isPresent())
             {
+                //check the type
+                visit(cases.get(i).getValue().get());
                 if(!cases.get(i).getValue().get().getType().equals(condition.getType()))
                     throw new RuntimeException("Case type is not same as switch statement type");
+                //if type correct, execute the case
                 visit(cases.get(i));
             }
             else
@@ -192,13 +220,19 @@ public final class Analyzer implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.While ast) {
-        throw new UnsupportedOperationException();  // TODO
+        visit(ast.getCondition());
+        requireAssignable(Environment.Type.BOOLEAN, ast.getCondition().getType());
+        scope = new Scope(scope);
+        for(Ast.Statement statements : ast.getStatements())
+            visit(statements);
+        scope = scope.getParent();
+        return null;
     }
 
     @Override
     public Void visit(Ast.Statement.Return ast) {
         //saved return type in variable to be used in function.
-        Environment.Variable var = scope.defineVariable("return", "return", ast.getValue().getType(), true, Environment.NIL);
+        visit(ast.getValue());
         return null;
     }
 
@@ -305,11 +339,10 @@ public final class Analyzer implements Ast.Visitor<Void> {
         Environment.Variable var = scope.lookupVariable(ast.getName());
         Optional optional = ast.getOffset();
         if (optional.isPresent()) {
+            visit(ast.getOffset().get());
             //require offset isnt an int, throw error
             //requireAssignable(Environment.Type.INTEGER, optional.get().)
-            if (optional.get() instanceof Integer) {
-                throw new RuntimeException("offset is not an integer");
-            }
+            requireAssignable(Environment.Type.INTEGER, ast.getOffset().get().getType());
         }
         ast.setVariable(var);
         return null;
@@ -321,6 +354,7 @@ public final class Analyzer implements Ast.Visitor<Void> {
         //List<Ast.Expression> arguments = ast.getArguments();
         //check every argument type matches parameter
         for (int i = 0; i < ast.getArguments().size(); i++) {
+            visit(ast.getArguments().get(i));
             requireAssignable(fun.getParameterTypes().get(i), ast.getArguments().get(i).getType());
         }
         ast.setFunction(fun);
@@ -330,7 +364,9 @@ public final class Analyzer implements Ast.Visitor<Void> {
     @Override
     public Void visit(Ast.Expression.PlcList ast) {
         List<Ast.Expression> vals = ast.getValues();
+        //ast.setType();
         for (Ast.Expression val : vals) {
+            visit(val);
             requireAssignable(ast.getType(), val.getType());
         }
         return null;
@@ -341,11 +377,9 @@ public final class Analyzer implements Ast.Visitor<Void> {
         {}
         else if(target.equals(Environment.Type.COMPARABLE))
         {
-            if(!(type.equals(Environment.Type.INTEGER) || type.equals(Environment.Type.DECIMAL) || type.equals(Environment.Type.CHARACTER) || type.equals(Environment.Type.STRING)))
+            if(!(type.equals(Environment.Type.INTEGER) || type.equals(Environment.Type.DECIMAL) || type.equals(Environment.Type.CHARACTER) || type.equals(Environment.Type.STRING) || type.equals(Environment.Type.COMPARABLE)))
                 throw new RuntimeException("Illegal comparison of comparable");
         }
-        else if(type.equals(Environment.Type.COMPARABLE) || type.equals(Environment.Type.ANY))
-            throw new RuntimeException("Illegal type on RHS");
         else if(!target.equals(type))
             throw new RuntimeException("Types do not match. Target is of type: " + target.getName() + ". RHS is of type: " + type.getName());
     }
