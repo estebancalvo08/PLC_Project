@@ -254,6 +254,8 @@ public final class AnalyzerTests {
     public void testAssignmentStatement(String test, Ast.Statement.Assignment ast, Ast.Statement.Assignment expected) {
         test(ast, expected, init(new Scope(null), scope -> {
             scope.defineVariable("variable", "variable", Environment.Type.INTEGER, true, Environment.NIL);
+            scope.defineVariable("any", "any", Environment.Type.ANY, true, Environment.NIL);
+            scope.defineVariable("comparable", "comparable", Environment.Type.COMPARABLE, true, Environment.NIL);
         }));
     }
 
@@ -277,6 +279,36 @@ public final class AnalyzerTests {
                                 new Ast.Expression.Literal("string")
                         ),
                         null
+                ),
+                Arguments.of("Any Type",
+                        // var = "string";
+                        new Ast.Statement.Assignment(
+                                new Ast.Expression.Access(Optional.empty(), "any"),
+                                new Ast.Expression.Literal("string")
+                        ),
+                        new Ast.Statement.Assignment(
+                                init(new Ast.Expression.Access(Optional.empty(), "any"), ast -> ast.setVariable(new Environment.Variable("any", "any", Environment.Type.ANY, true, Environment.NIL))),
+                                init(new Ast.Expression.Literal("string"), ast -> ast.setType(Environment.Type.STRING))
+                        )
+                ),
+                Arguments.of("comparable Type",
+                        // var = "string";
+                        new Ast.Statement.Assignment(
+                                new Ast.Expression.Access(Optional.empty(), "comparable"),
+                                new Ast.Expression.Literal('c')
+                        ),
+                        new Ast.Statement.Assignment(
+                                init(new Ast.Expression.Access(Optional.empty(), "comparable"), ast -> ast.setVariable(new Environment.Variable("comparable", "comparable", Environment.Type.COMPARABLE, true, Environment.NIL))),
+                                init(new Ast.Expression.Literal('c'), ast -> ast.setType(Environment.Type.CHARACTER))
+                        )
+                ),
+                Arguments.of("Any as RHS",
+                        // var = "string";
+                        new Ast.Statement.Assignment(
+                                new Ast.Expression.Access(Optional.empty(), "comparable"),
+                                new Ast.Expression.Access(Optional.empty(), "any")
+                        ),
+                       null
                 )
         );
     }
@@ -447,7 +479,24 @@ public final class AnalyzerTests {
                 )
         );
     }
+    @ParameterizedTest(name = "{0}")
+    @MethodSource
+    public void testWhileStatement(String test, Ast.Statement.While ast, Ast.Statement.While expected) {
+        test(ast, expected, new Scope(null));
+    }
 
+    private static Stream<Arguments> testWhileStatement() {
+        return Stream.of(
+                Arguments.of("Valid Condition",
+                        new Ast.Statement.While(new Ast.Expression.Literal(true), Arrays.asList()),
+                        new Ast.Statement.While(init(new Ast.Expression.Literal(true), ast -> ast.setType(Environment.Type.BOOLEAN)), Arrays.asList())
+                ),
+                Arguments.of("Invalid Condition",
+                        new Ast.Statement.While(new Ast.Expression.Literal(BigInteger.ZERO), Arrays.asList()),
+                        null
+                )
+        );
+    }
     @ParameterizedTest(name = "{0}")
     @MethodSource
     public void testLiteralExpression(String test, Ast.Expression.Literal ast, Ast.Expression.Literal expected) {
@@ -749,6 +798,7 @@ public final class AnalyzerTests {
     public void testAccessExpression(String test, Ast.Expression ast, Ast.Expression.Access expected) {
         test(ast, expected, init(new Scope(null), scope -> {
             scope.defineVariable("variable", "variable", Environment.Type.INTEGER, true, Environment.NIL);
+            scope.defineVariable("list", "list", Environment.Type.INTEGER, true, Environment.NIL);
         }));
     }
 
@@ -758,6 +808,16 @@ public final class AnalyzerTests {
                         // variable
                         new Ast.Expression.Access(Optional.empty(), "variable"),
                         init(new Ast.Expression.Access(Optional.empty(), "variable"), ast -> ast.setVariable(new Environment.Variable("variable", "variable", Environment.Type.INTEGER, true, Environment.NIL)))
+                ),
+                Arguments.of("List",
+                        // variable
+                        new Ast.Expression.Access(Optional.of(new Ast.Expression.Literal(BigInteger.ONE)), "list"),
+                        init(new Ast.Expression.Access(Optional.of(init(new Ast.Expression.Literal(BigInteger.ONE), ast -> ast.setType(Environment.Type.INTEGER))), "list"), ast -> ast.setVariable(new Environment.Variable("list", "list", Environment.Type.INTEGER, true, Environment.NIL)))
+                ),
+                Arguments.of("List Invalid",
+                        // variable
+                        new Ast.Expression.Access(Optional.of(new Ast.Expression.Literal(BigDecimal.ONE)), "variable"),
+                        null
                 )
         );
     }
@@ -767,6 +827,7 @@ public final class AnalyzerTests {
     public void testFunctionExpression(String test, Ast.Expression.Function ast, Ast.Expression.Function expected) {
         test(ast, expected, init(new Scope(null), scope -> {
             scope.defineFunction("function", "function", Arrays.asList(), Environment.Type.INTEGER, args -> Environment.NIL);
+            scope.defineFunction("function", "function", Arrays.asList(Environment.Type.INTEGER), Environment.Type.INTEGER, args -> Environment.NIL);
         }));
     }
 
@@ -776,6 +837,17 @@ public final class AnalyzerTests {
                         // function()
                         new Ast.Expression.Function("function", Arrays.asList()),
                         init(new Ast.Expression.Function("function", Arrays.asList()), ast -> ast.setFunction(new Environment.Function("function", "function", Arrays.asList(), Environment.Type.INTEGER, args -> Environment.NIL)))
+                ),
+                Arguments.of("Function(1)",
+                        // function(1)
+                        new Ast.Expression.Function("function", Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE))),
+                        init(new Ast.Expression.Function("function", Arrays.asList(init(new Ast.Expression.Literal(BigInteger.ONE), ast -> ast.setType(Environment.Type.INTEGER)))),
+                                ast -> ast.setFunction(new Environment.Function("function", "function", Arrays.asList(Environment.Type.INTEGER), Environment.Type.INTEGER, args -> Environment.NIL)))
+                ),
+                Arguments.of("Function(1.0) invalid",
+                        // function()
+                        new Ast.Expression.Function("function", Arrays.asList(new Ast.Expression.Literal(BigDecimal.ONE))),
+                        null
                 )
         );
     }

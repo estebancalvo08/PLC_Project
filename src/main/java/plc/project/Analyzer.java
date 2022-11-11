@@ -153,8 +153,7 @@ public final class Analyzer implements Ast.Visitor<Void> {
         //initialize the receiver and value types
         visit(ast.getReceiver());
         visit(ast.getValue());
-        if(!ast.getReceiver().getType().equals(ast.getValue().getType()))
-            throw new RuntimeException("Receiver and value are of different types");
+        requireAssignable(ast.getReceiver().getType(), ast.getValue().getType());
         return null;
     }
 
