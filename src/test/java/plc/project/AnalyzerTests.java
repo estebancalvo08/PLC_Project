@@ -57,7 +57,55 @@ public final class AnalyzerTests {
                                 )
                         ),
                         null
-                )
+                ),
+                // FUN main(num : Integer) DO END;
+                Arguments.of("No Main function with arity 0",
+                        new Ast.Source(
+                                Arrays.asList(),
+                                Arrays.asList(
+                                        new Ast.Function("main", Arrays.asList("num"), Arrays.asList("Integer"), Optional.empty(), Arrays.asList()))),
+                        null
+                ),
+                // FUN Fun() DO END;
+                Arguments.of("No main Function",
+                        new Ast.Source(
+                                Arrays.asList(),
+                                Arrays.asList(
+                                        new Ast.Function("Fun", Arrays.asList(), Arrays.asList(), Optional.of("Integer"), Arrays.asList()))),
+                        null
+                ),
+                // FUN main() : Decimal DO END;
+                Arguments.of("Main Function wrong return type",
+                        new Ast.Source(
+                                Arrays.asList(),
+                                Arrays.asList(
+                                        new Ast.Function("main", Arrays.asList(), Arrays.asList(), Optional.of("Decimal"), Arrays.asList()))),
+                        null
+                ),
+                Arguments.of("Valid Return",
+                        //VAR value: Integer = 1; FUN main(): Integer DO RETURN value; END
+                        new Ast.Source(
+                                Arrays.asList(
+                                        new Ast.Global("value", "Integer", true, Optional.of(new Ast.Expression.Literal(BigInteger.ONE)))
+                                ),
+                                Arrays.asList(
+                                        new Ast.Function("main", Arrays.asList(), Arrays.asList(), Optional.of("Integer"), Arrays.asList(
+                                                new Ast.Statement.Return(new Ast.Expression.Access(Optional.empty(), "value")))
+                                        )
+                                )
+                        ),
+                        new Ast.Source(
+                                Arrays.asList(
+                                init(new Ast.Global("value", "Integer", true, Optional.of(init(new Ast.Expression.Literal(BigInteger.ONE), ast->ast.setType(Environment.Type.INTEGER)))),
+                                        ast->ast.setVariable(new Environment.Variable("value", "value", Environment.Type.INTEGER, true, Environment.create(BigInteger.ONE))))),
+                                Arrays.asList(
+                                init(new Ast.Function("main", Arrays.asList(), Arrays.asList(),Optional.of("Integer"), Arrays.asList(
+                                     new Ast.Statement.Return(
+                                             init(new Ast.Expression.Access(Optional.empty(), "value"), ast ->ast.setVariable(new Environment.Variable("value", "value", Environment.Type.INTEGER, true, Environment.NIL)))))),
+                                        ast -> ast.setFunction(new Environment.Function("main", "main", Arrays.asList(), Environment.Type.INTEGER, args -> Environment.NIL ))
+                                ))
+
+                ))
         );
     }
 
@@ -204,6 +252,51 @@ public final class AnalyzerTests {
                                                 ), ast -> ast.setType(Environment.Type.INTEGER))
                                         ))),
                                 ast -> ast.setFunction(new Environment.Function("increment", "increment", Arrays.asList(Environment.Type.INTEGER), Environment.Type.INTEGER, args -> Environment.NIL)))
+                ),
+                Arguments.of("Early Return Correct",
+                        // FUN fun() :Integer DO if(true) Do Return 1; END Return 0 END
+                        new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.of("Integer"), Arrays.asList(
+                                new Ast.Statement.If(new Ast.Expression.Literal(true), Arrays.asList(new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ONE))), Arrays.asList()),
+                                new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ONE)))),
+                        init(new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.of("Integer"), Arrays.asList(
+                                new Ast.Statement.If(init(new Ast.Expression.Literal(true), ast->ast.setType(Environment.Type.BOOLEAN)),
+                                        Arrays.asList(new Ast.Statement.Return(init(new Ast.Expression.Literal(BigInteger.ONE), ast -> ast.setType(Environment.Type.INTEGER)))), Arrays.asList()),
+                                new Ast.Statement.Return(init(new Ast.Expression.Literal(BigInteger.ONE), ast->ast.setType(Environment.Type.INTEGER))))),
+                                ast->ast.setFunction(new Environment.Function("fun", "fun", Arrays.asList(), Environment.Type.INTEGER, args -> Environment.NIL)))
+                ),
+                Arguments.of("Early Return incorrect",
+                        // FUN fun() :Integer DO if(true) Do Return 'c'; END Return 0 END
+                        new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.of("Integer"), Arrays.asList(
+                                new Ast.Statement.If(new Ast.Expression.Literal(true), Arrays.asList(new Ast.Statement.Return(new Ast.Expression.Literal('c'))), Arrays.asList()),
+                                new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ONE)))),
+                        null
+                ),
+                Arguments.of("Early Return incorrect",
+                        // FUN fun() :Integer DO if(true) Do Return 1; else return 'c' END;
+                        new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.of("Integer"), Arrays.asList(
+                                new Ast.Statement.If(new Ast.Expression.Literal(true),
+                                        Arrays.asList(new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ONE))),
+                                        Arrays.asList(new Ast.Statement.Return(new Ast.Expression.Literal('c')))))),
+                            null
+                )
+        );
+    }
+    @ParameterizedTest(name = "{0}")
+    @MethodSource
+    public void testStatementExpression(String test, Ast.Statement.Expression ast, Ast.Statement.Expression expected) {
+       test(ast, expected, new Scope(null));
+    }
+
+    private static Stream<Arguments> testStatementExpression() {
+        return Stream.of(
+                Arguments.of("Function",
+                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE)))),
+                        new Ast.Statement.Expression(init(new Ast.Expression.Function("print", Arrays.asList(init(new Ast.Expression.Literal(BigInteger.ONE), ast->ast.setType(Environment.Type.INTEGER)))),
+                                ast ->ast.setFunction(new Environment.Function("print", "System.out.println", Arrays.asList(Environment.Type.ANY), Environment.Type.NIL, args -> Environment.NIL))))
+                ),
+                Arguments.of("Literal",
+                        new Ast.Statement.Expression(new Ast.Expression.Literal(BigInteger.ONE)),
+                        null
                 )
         );
     }
@@ -477,18 +570,57 @@ public final class AnalyzerTests {
                                                         new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("yes")))),
                                                         new Ast.Statement.Assignment(
                                                                 new Ast.Expression.Access(Optional.empty(), "letter"),
-                                                                new Ast.Expression.Literal('n')
-                                                        )
-                                                )
-                                        ),
+                                                                new Ast.Expression.Literal('n')))),
                                         new Ast.Statement.Case(
                                                 Optional.empty(),
                                                 Arrays.asList(
-                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("no"))))
-                                                )
-                                        )
-                                )
-                        ),
+                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("no")))))))),
+                        null
+                ),
+                Arguments.of("More than 1 default",
+                        // SWITCH number CASE 'y': print("yes"); letter = 'n'; DEFAULT: print("no"); END
+                        new Ast.Statement.Switch(
+                                new Ast.Expression.Access(Optional.empty(),"letter"),
+                                Arrays.asList(
+                                        new Ast.Statement.Case(
+                                                Optional.of(new Ast.Expression.Literal('y')),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("yes")))),
+                                                        new Ast.Statement.Assignment(
+                                                                new Ast.Expression.Access(Optional.empty(), "letter"),
+                                                                new Ast.Expression.Literal('n')))),
+                                        new Ast.Statement.Case(
+                                                Optional.empty(),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("no")))))),
+                                        new Ast.Statement.Case(
+                                                Optional.empty(),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("no")))))))),
+                        null
+                ),
+                Arguments.of("Only Default",
+                        // SWITCH number CASE 'y': print("yes"); letter = 'n'; DEFAULT: print("no"); END
+                        new Ast.Statement.Switch(
+                                new Ast.Expression.Access(Optional.empty(),"letter"),
+                                Arrays.asList(
+                                        new Ast.Statement.Case(
+                                                Optional.empty(),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Expression(new Ast.Expression.Function("print", Arrays.asList(new Ast.Expression.Literal("no")))))))),
+                        new Ast.Statement.Switch(init(new Ast.Expression.Access(Optional.empty(), "letter"), args -> args.setVariable(new Environment.Variable("letter", "letter", Environment.Type.CHARACTER, true, Environment.create('y')))),
+                                                Arrays.asList(new Ast.Statement.Case(
+                                                        Optional.empty(),
+                                                        Arrays.asList(
+                                                                new Ast.Statement.Expression(
+                                                                        init(new Ast.Expression.Function("print", Arrays.asList(init(new Ast.Expression.Literal("no"), ast -> ast.setType(Environment.Type.STRING)))),
+                                                                                ast -> ast.setFunction(new Environment.Function("print", "System.out.println", Arrays.asList(Environment.Type.ANY), Environment.Type.NIL, args -> Environment.NIL))))))))
+                ),
+                Arguments.of("Default has Value",
+                        // SWITCH number CASE 'y': print("yes"); letter = 'n'; DEFAULT: print("no"); END
+                        new Ast.Statement.Switch(
+                                new Ast.Expression.Access(Optional.empty(),"letter"),
+                                Arrays.asList(new Ast.Statement.Case(Optional.of(new Ast.Expression.Literal('y')),  Arrays.asList()))),
                         null
                 )
         );
@@ -809,7 +941,7 @@ public final class AnalyzerTests {
                         null
                 ),
                 Arguments.of("Illegal multiplication of char and string",
-                        // 1 + 1.0
+                        // 'a' * 10
                         new Ast.Expression.Binary("*",
                                 new Ast.Expression.Literal('a'),
                                 new Ast.Expression.Literal("BigInteger.TEN")

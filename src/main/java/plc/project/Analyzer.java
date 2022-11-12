@@ -35,8 +35,12 @@ public final class Analyzer implements Ast.Visitor<Void> {
         List<Ast.Function> functions = ast.getFunctions();
         for(Ast.Global global : globals)
             visit(global);
-        for(Ast.Function function : functions)
-            visit(function);
+        for(Ast.Function fun : functions)
+            visit(fun);
+        //Make sure there is a main function with arity 0
+        Environment.Function main= scope.lookupFunction("main", 0);
+        //Make sure the main function has an integer return type
+        requireAssignable(Environment.Type.INTEGER, main.getReturnType());
         return null;
     }
 
@@ -96,14 +100,10 @@ public final class Analyzer implements Ast.Visitor<Void> {
         //public Environment.Function defineFunction(String name, String jvmName, List<Environment.Type> parameterTypes, Environment.Type returnType, java.util.function.Function<List<Environment.PlcObject>, Environment.PlcObject> function) {
         scope.defineFunction(name, name, paramTypes, returnType, args -> Environment.NIL);
         ast.setFunction(scope.lookupFunction(name, ast.getParameters().size()));
+        function = ast;
         scope = new Scope(scope);
         for(Ast.Statement statement : statements)
-        {
-            visit(statement);
-            if(statement instanceof Ast.Statement.Return && !((Ast.Statement.Return) statement).getValue().getType().equals(returnType)) {
-                throw new RuntimeException("Return type does not match function return type");
-            }
-        }
+                visit(statement);
         scope = scope.getParent();
         return null;
     }
@@ -165,18 +165,17 @@ public final class Analyzer implements Ast.Visitor<Void> {
             throw new RuntimeException("Then statement is empty for if");
         List<Ast.Statement> thenStatements = ast.getThenStatements();
         List<Ast.Statement> elseStatements = ast.getElseStatements();
-        Scope curr = scope;
-        scope = new Scope(curr);
+        scope = new Scope(scope);
         for(Ast.Statement statements : thenStatements)
             visit(statements);
-        scope = curr;
+        scope = scope.getParent();
         if(!elseStatements.isEmpty())
         {
-            scope = new Scope(curr);
+            scope = new Scope(scope);
             for(Ast.Statement statements : elseStatements)
                 visit(statements);
+            scope = scope.getParent();
         }
-        scope = curr;
         return null;
     }
 
@@ -202,7 +201,7 @@ public final class Analyzer implements Ast.Visitor<Void> {
         }
         //If last cases has value, error
         if(cases.get(i).getValue().isPresent())
-            throw new RuntimeException("Illegal switch without default");
+            throw new RuntimeException("Illegal value in default case");
         else visit(cases.get(i));
         return null;
     }
@@ -231,8 +230,10 @@ public final class Analyzer implements Ast.Visitor<Void> {
     @Override
     public Void visit(Ast.Statement.Return ast) {
         //saved return type in variable to be used in function.
-        visit(ast.getValue());
-        return null;
+            visit(ast.getValue());
+            if(!ast.getValue().getType().equals(getType(function.getReturnTypeName().get())))
+                throw new RuntimeException("Return does not match function declaration return type");
+            return null;
     }
 
     @Override
@@ -382,5 +383,6 @@ public final class Analyzer implements Ast.Visitor<Void> {
         else if(!target.equals(type))
             throw new RuntimeException("Types do not match. Target is of type: " + target.getName() + ". RHS is of type: " + type.getName());
     }
+
 
 }
