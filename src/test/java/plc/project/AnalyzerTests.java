@@ -105,7 +105,36 @@ public final class AnalyzerTests {
                                         ast -> ast.setFunction(new Environment.Function("main", "main", Arrays.asList(), Environment.Type.INTEGER, args -> Environment.NIL ))
                                 ))
 
-                ))
+                )),
+                Arguments.of("Multiple Functions with Different Return types",
+                        //Fun fun() : String return "true";
+                        //Fun main() : Integer return 0;
+                        new Ast.Source(
+                                Arrays.asList(),
+                                Arrays.asList(
+                                        new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.of("String"), Arrays.asList(
+                                                new Ast.Statement.Return(new Ast.Expression.Literal("true")))
+                                        ),
+                                        new Ast.Function("main", Arrays.asList(), Arrays.asList(), Optional.of("Integer"), Arrays.asList(
+                                                new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ZERO)))
+                                        )
+                                )
+                        ),
+                        new Ast.Source(
+                                Arrays.asList(),
+                                Arrays.asList(
+                                        init(new Ast.Function("fun", Arrays.asList(), Arrays.asList(),Optional.of("String"), Arrays.asList(
+                                                        new Ast.Statement.Return(
+                                                                init(new Ast.Expression.Literal("true"), ast ->ast.setType(Environment.Type.STRING))))),
+                                                ast -> ast.setFunction(new Environment.Function("fun", "fun", Arrays.asList(), Environment.Type.STRING, args -> Environment.NIL ))
+                                        ),
+                                        init(new Ast.Function("main", Arrays.asList(), Arrays.asList(),Optional.of("Integer"), Arrays.asList(
+                                                        new Ast.Statement.Return(
+                                                                init(new Ast.Expression.Literal(BigInteger.ZERO), ast ->ast.setType(Environment.Type.INTEGER))))),
+                                                ast -> ast.setFunction(new Environment.Function("main", "main", Arrays.asList(), Environment.Type.INTEGER, args -> Environment.NIL ))
+                                        ))
+
+                        ))
         );
     }
 
@@ -278,6 +307,20 @@ public final class AnalyzerTests {
                                         Arrays.asList(new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ONE))),
                                         Arrays.asList(new Ast.Statement.Return(new Ast.Expression.Literal('c')))))),
                             null
+                ),
+                Arguments.of("Function with no type return return null",
+                        // FUN fun() return "ok;
+                        new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.empty(), Arrays.asList(
+                                new Ast.Statement.Return(new Ast.Expression.Literal(null)))),
+                        init(new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.empty(), Arrays.asList(
+                                new Ast.Statement.Return(init(new Ast.Expression.Literal(null), ast->ast.setType(Environment.Type.NIL)))
+                        )), ast->ast.setFunction(new Environment.Function("fun", "fun", Arrays.asList(), Environment.Type.NIL, args-> Environment.NIL)))
+                ),
+                Arguments.of("Function with no type return return null",
+                        // FUN fun() return "ok;
+                        new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.empty(), Arrays.asList(
+                                new Ast.Statement.Return(new Ast.Expression.Literal("ok")))),
+                      null
                 )
         );
     }
