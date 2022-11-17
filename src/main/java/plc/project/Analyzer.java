@@ -1,10 +1,7 @@
 package plc.project;
 
-import org.omg.CORBA.portable.ValueInputStream;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.spec.EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,7 +46,7 @@ public final class Analyzer implements Ast.Visitor<Void> {
         Optional value = ast.getValue();
         //If there is a value, visit value and make sure returned value type is same as declaration type
         if(value.isPresent()) {
-            //if list, assign type beforehand so PLC list function can check values within the list
+            //If list, assign type beforehand so PLC list function can check values within the list
             if(value.get() instanceof Ast.Expression.PlcList)
                 ((Ast.Expression.PlcList) value.get()).setType(getType(ast.getTypeName()));
             visit(ast.getValue().get());
@@ -96,8 +93,6 @@ public final class Analyzer implements Ast.Visitor<Void> {
         }
         if(ast.getReturnTypeName().isPresent())
              returnType = getType(ast.getReturnTypeName().get());
-        //public Function(String name, List<String> parameters, List<String> parameterTypeNames, Optional<String> returnTypeName, List<Statement> statements
-        //public Environment.Function defineFunction(String name, String jvmName, List<Environment.Type> parameterTypes, Environment.Type returnType, java.util.function.Function<List<Environment.PlcObject>, Environment.PlcObject> function) {
         scope.defineFunction(name, name, paramTypes, returnType, args -> Environment.NIL);
         ast.setFunction(scope.lookupFunction(name, ast.getParameters().size()));
         function = ast;
@@ -230,7 +225,7 @@ public final class Analyzer implements Ast.Visitor<Void> {
     @Override
     public Void visit(Ast.Statement.Return ast) {
         //saved return type in variable to be used in function.
-            visit(ast.getValue());
+        visit(ast.getValue());
             //If function did not have return type, the return type must be Nil
         if(!function.getReturnTypeName().isPresent()) {
             if (!function.getReturnTypeName().isPresent() && !ast.getValue().getType().equals(Environment.Type.NIL))
