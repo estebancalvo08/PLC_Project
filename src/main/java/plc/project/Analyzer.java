@@ -226,17 +226,8 @@ public final class Analyzer implements Ast.Visitor<Void> {
     public Void visit(Ast.Statement.Return ast) {
         //saved return type in variable to be used in function.
         visit(ast.getValue());
-            //If function did not have return type, the return type must be Nil
-        if(!function.getReturnTypeName().isPresent()) {
-            if (!function.getReturnTypeName().isPresent() && !ast.getValue().getType().equals(Environment.Type.NIL))
-                throw new RuntimeException();
-        }
-        //else, check that the return type matches the function declaration return
-        else {
-            if (!ast.getValue().getType().equals(getType(function.getReturnTypeName().get())))
-                throw new RuntimeException("Return does not match function declaration return type");
-        }
-            return null;
+        requireAssignable(ast.getValue().getType(), function.getFunction().getReturnType());
+        return null;
     }
 
     @Override
