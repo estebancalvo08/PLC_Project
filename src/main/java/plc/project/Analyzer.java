@@ -249,8 +249,8 @@ public final class Analyzer implements Ast.Visitor<Void> {
         }
         else if(ast.getLiteral() instanceof BigDecimal)
         {
-            BigDecimal decimal = (BigDecimal) ast.getLiteral();
-            if(decimal.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) > 0 || decimal.compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) < 0)
+            double num = ((BigDecimal) ast.getLiteral()).doubleValue();
+            if(num == Double.NEGATIVE_INFINITY || num == Double.POSITIVE_INFINITY)
                 throw new RuntimeException("Integer out of bounds exception");
             ast.setType(Environment.Type.DECIMAL);
         }
@@ -285,9 +285,10 @@ public final class Analyzer implements Ast.Visitor<Void> {
         {
             //check that LHS and RHS of the same type
             requireAssignable(LHS.getType(), RHS.getType());
-            if(LHS.getType().equals(Environment.Type.INTEGER) || LHS.getType().equals(Environment.Type.DECIMAL) || LHS.getType().equals(Environment.Type.STRING) || LHS.getType().equals(Environment.Type.CHARACTER))
-                ast.setType(Environment.Type.BOOLEAN);
-            else throw new RuntimeException("Illegal comparison of Non-Comparable types");
+            //Now check LHS and RHS comparable
+            requireAssignable(Environment.Type.COMPARABLE, LHS.getType());
+            requireAssignable(Environment.Type.COMPARABLE, RHS.getType());
+            ast.setType(Environment.Type.BOOLEAN);
         }
         else if(operator.equals("+"))
         {

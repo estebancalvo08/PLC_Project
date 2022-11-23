@@ -683,7 +683,16 @@ public final class AnalyzerTests {
                 Arguments.of("Invalid Condition",
                         new Ast.Statement.While(new Ast.Expression.Literal(BigInteger.ZERO), Arrays.asList()),
                         null
-                )
+                ),
+                Arguments.of("Valid Condition with statement",
+                        new Ast.Statement.While(new Ast.Expression.Literal(true), Arrays.asList(
+                                new Ast.Statement.Declaration("name", Optional.of("Integer"), Optional.empty())
+                        )),
+                        new Ast.Statement.While(init(new Ast.Expression.Literal(true), ast -> ast.setType(Environment.Type.BOOLEAN)), Arrays.asList(
+                              init(new Ast.Statement.Declaration("name", Optional.of("Integer"), Optional.empty()), ast -> {
+                            ast.setVariable(new Environment.Variable("name", "name", Environment.Type.INTEGER, true, Environment.NIL));
+                        }))
+                        ))
         );
     }
     @ParameterizedTest(name = "{0}")
@@ -809,7 +818,9 @@ public final class AnalyzerTests {
     @ParameterizedTest(name = "{0}")
     @MethodSource
     public void testBinaryExpression(String test, Ast.Expression.Binary ast, Ast.Expression.Binary expected) {
-        test(ast, expected, new Scope(null));
+        Scope scope = new Scope(null);
+        scope.defineVariable("comparable", "comparable", Environment.Type.COMPARABLE, true, Environment.NIL);
+        test(ast, expected, scope);
     }
 
     private static Stream<Arguments> testBinaryExpression() {
@@ -857,7 +868,8 @@ public final class AnalyzerTests {
                                 new Ast.Expression.Literal('a')
                         ),
                         null
-                ),                Arguments.of("Greater than Valid",
+                ),
+                Arguments.of("Greater than Valid",
                         new Ast.Expression.Binary(">",
                                 new Ast.Expression.Literal(BigDecimal.ONE),
                                 new Ast.Expression.Literal(BigDecimal.TEN)
@@ -865,6 +877,16 @@ public final class AnalyzerTests {
                         init(new Ast.Expression.Binary(">",
                                 init(new Ast.Expression.Literal(BigDecimal.ONE), ast -> ast.setType(Environment.Type.DECIMAL)),
                                 init(new Ast.Expression.Literal(BigDecimal.TEN), ast -> ast.setType(Environment.Type.DECIMAL))
+                        ), ast -> ast.setType(Environment.Type.BOOLEAN))
+                ),
+                Arguments.of("Greater than Valid",
+                        new Ast.Expression.Binary(">",
+                                new Ast.Expression.Access(Optional.empty(), "comparable"),
+                                new Ast.Expression.Access(Optional.empty(), "comparable")
+                        ),
+                        init(new Ast.Expression.Binary(">",
+                                init(new Ast.Expression.Access(Optional.empty(), "comparable"), ast->ast.setVariable(new Environment.Variable("comparable", "comparable", Environment.Type.COMPARABLE, true, Environment.NIL))),
+                                init(new Ast.Expression.Access(Optional.empty(), "comparable"), ast->ast.setVariable(new Environment.Variable("comparable", "comparable", Environment.Type.COMPARABLE, true, Environment.NIL)))
                         ), ast -> ast.setType(Environment.Type.BOOLEAN))
                 ),
                 Arguments.of("Equals than Valid",

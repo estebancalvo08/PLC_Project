@@ -35,26 +35,29 @@ public final class Generator implements Ast.Visitor<Void> {
         int curr = indent;
         indent++;
         print("public class Main {");
-        newline(curr);
-        newline(indent);
-        for(Ast.Global global : ast.getGlobals())
-            print(global);
-        if(!ast.getGlobals().isEmpty()){
-            newline(indent);
-            newline(indent);
+        newline(0);
+        if(!ast.getGlobals().isEmpty()) {
+            for (Ast.Global global : ast.getGlobals()) {
+                newline(indent);
+                print(global);
+            }
+            newline(0);
         }
+        newline(indent);
         print("public static void main(String[] args) {");
         newline(indent+1);
         print("System.exit(new Main().main());");
         newline(indent);
         print("}");
-        newline(curr);
-        newline(indent);
-        for(Ast.Function function : ast.getFunctions())
+        for(Ast.Function function : ast.getFunctions()) {
+            newline(0);
+            newline(indent);
             print(function);
-        newline(curr);
-        newline(curr);
+        }
+        newline(0);
+        newline(0);
         print("}");
+        indent = curr;
         return null;
     }
 
@@ -63,9 +66,9 @@ public final class Generator implements Ast.Visitor<Void> {
         if(!ast.getMutable())
             print("final ");
         if(ast.getValue().isPresent() && ast.getValue().get() instanceof Ast.Expression.PlcList)
-            print(getType(ast.getTypeName()), "[] ", ast.getName());
+            print(ast.getVariable().getType().getJvmName(), "[] ", ast.getVariable().getJvmName());
         else
-            print(getType(ast.getTypeName()), " ", ast.getName());
+            print(ast.getVariable().getType().getJvmName(), " ", ast.getVariable().getJvmName());
         if(ast.getValue().isPresent())
             print(" = ", ast.getValue().get());
         print(";");
@@ -76,19 +79,20 @@ public final class Generator implements Ast.Visitor<Void> {
     public Void visit(Ast.Function ast) {
         int curr = indent;
         indent++;
-        print(getType(ast.getReturnTypeName().get()), " ", ast.getName(), "(");
+        print(ast.getFunction().getReturnType().getJvmName(), " ", ast.getFunction().getJvmName() , "(");
         for(int i = 0; i < ast.getParameters().size(); i++){
             if(i == 0)
-                print(getType(ast.getParameterTypeNames().get(i)), " ", ast.getParameters().get(i));
+                print(getJvm(ast.getParameterTypeNames().get(i)), " ", ast.getParameters().get(i));
             else
-                print(",", getType(ast.getParameterTypeNames().get(i)), " ", ast.getParameters().get(i));
+                print(",", getJvm(ast.getParameterTypeNames().get(i)), " ", ast.getParameters().get(i));
         }
         print(") {");
         for(Ast.Statement statement : ast.getStatements()){
             newline(indent);
             print(statement);
         }
-        newline(curr);
+        if(!ast.getStatements().isEmpty())
+            newline(curr);
         print("}");
         indent = curr;
         return null;
@@ -103,9 +107,9 @@ public final class Generator implements Ast.Visitor<Void> {
     @Override
     public Void visit(Ast.Statement.Declaration ast) {
         if(ast.getValue().isPresent())
-            print(getType(ast.getValue().get()), " ", ast.getName(), " = ", ast.getValue().get(), ";");
+            print(ast.getValue().get().getType().getJvmName(), " ", ast.getVariable().getJvmName() , " = ", ast.getValue().get(), ";");
         else
-            print(getType(ast.getTypeName().get()), " ", ast.getName(), ";");
+            print(ast.getVariable().getType().getJvmName(), " ", ast.getVariable().getJvmName() , ";");
         return null;
     }
 
@@ -276,12 +280,12 @@ public final class Generator implements Ast.Visitor<Void> {
         return null;
     }
 
-    private String getType(Ast.Expression RHS){
+    private String getJvm(Ast.Expression RHS){
         Environment.Type type = RHS.getType();
         return type.getJvmName();
     }
 
-    private String getType(String name){
+    private String getJvm(String name){
         if(name.equals("String"))
             return "String";
         if(name.equals("Any"))
