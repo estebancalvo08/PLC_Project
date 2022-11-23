@@ -1,13 +1,9 @@
 package plc.project;
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
-import javax.swing.plaf.IconUIResource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.Optional;
 
 public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
