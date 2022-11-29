@@ -84,7 +84,7 @@ public final class Generator implements Ast.Visitor<Void> {
             if(i == 0)
                 print(getJvm(ast.getParameterTypeNames().get(i)), " ", ast.getParameters().get(i));
             else
-                print(",", getJvm(ast.getParameterTypeNames().get(i)), " ", ast.getParameters().get(i));
+                print(", ", getJvm(ast.getParameterTypeNames().get(i)), " ", ast.getParameters().get(i));
         }
         print(") {");
         for(Ast.Statement statement : ast.getStatements()){
@@ -173,6 +173,8 @@ public final class Generator implements Ast.Visitor<Void> {
                 newline(indent);
                 print(statement);
             }
+            newline(indent);
+            print("break;");
             newline(curr);
         }
         else{

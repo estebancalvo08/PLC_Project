@@ -208,6 +208,35 @@ public class GeneratorTests {
                                 ast -> ast.setFunction(new Environment.Function("area", "area", Arrays.asList(Environment.Type.DECIMAL), Environment.Type.DECIMAL, args -> Environment.NIL))),
                         "double area(double radius) {}"
                 ),
+                Arguments.of("multiple statements",
+                        init(new Ast.Function("fun", Arrays.asList("x","y","z"), Arrays.asList("Integer", "Decimal", "String"), Optional.empty(), Arrays.asList(
+                                new Ast.Statement.Expression(init(new Ast.Expression.Function("print", Arrays.asList(
+                                        init(new Ast.Expression.Access(Optional.empty(), "x"), ast->ast.setVariable(
+                                                new Environment.Variable("x","x", Environment.Type.INTEGER, true, Environment.NIL)
+                                        ))
+                                )), ast->ast.setFunction(new Environment.Function("print", "System.out.println", Arrays.asList(Environment.Type.INTEGER), Environment.Type.NIL, args->Environment.NIL)))),
+
+                                new Ast.Statement.Expression(init(new Ast.Expression.Function("print", Arrays.asList(
+                                        init(new Ast.Expression.Access(Optional.empty(), "y"), ast->ast.setVariable(
+                                                new Environment.Variable("y","y", Environment.Type.DECIMAL, true, Environment.NIL)
+                                        ))
+                                )), ast->ast.setFunction(new Environment.Function("print", "System.out.println", Arrays.asList(Environment.Type.DECIMAL), Environment.Type.NIL, args->Environment.NIL)))),
+
+                                new Ast.Statement.Expression(init(new Ast.Expression.Function("print", Arrays.asList(
+                                        init(new Ast.Expression.Access(Optional.empty(), "z"), ast->ast.setVariable(
+                                                new Environment.Variable("z","z", Environment.Type.STRING, true, Environment.NIL)
+                                        ))
+                                )), ast->ast.setFunction(new Environment.Function("print", "System.out.println", Arrays.asList(Environment.Type.STRING), Environment.Type.NIL, args->Environment.NIL)))))),
+                                ast -> ast.setFunction(new Environment.Function("fun", "fun", Arrays.asList(Environment.Type.INTEGER, Environment.Type.DECIMAL, Environment.Type.STRING), Environment.Type.NIL, args -> Environment.NIL))),
+                        String.join(System.lineSeparator(),
+                                "Void fun(int x, double y, String z) {",
+                                "    System.out.println(x);",
+                                "    System.out.println(y);",
+                                "    System.out.println(z);",
+                                "}"
+                        )
+
+                ),
                 Arguments.of("Indent after switch ",
                         init(new Ast.Function("fun", Arrays.asList(), Arrays.asList(), Optional.empty(), Arrays.asList(
                         new Ast.Statement.Switch(
@@ -246,6 +275,7 @@ public class GeneratorTests {
                         "        case 'y':",
                         "            System.out.println(\"yes\");",
                         "            letter = 'n';",
+                        "            break;",
                         "        default:",
                         "            System.out.println(\"no\");",
                         "    }",
@@ -436,8 +466,22 @@ public class GeneratorTests {
                                                                 )
                                                         ),
                                                         new Ast.Statement.Assignment(
-                                                                init(new Ast.Expression.Access(Optional.empty(), "letter"), ast -> ast.setVariable(new Environment.Variable("letter", "letter", Environment.Type.CHARACTER, true, Environment.create('y')))),
-                                                                init(new Ast.Expression.Literal('n'), ast -> ast.setType(Environment.Type.CHARACTER))
+                                                                init(new Ast.Expression.Access(Optional.empty(), "letter"), ast -> ast.setVariable(new Environment.Variable("letter", "letter", Environment.Type.CHARACTER, true, Environment.NIL))),
+                                                                init(new Ast.Expression.Literal('a'), ast -> ast.setType(Environment.Type.CHARACTER))
+                                                        )
+                                                )
+                                        ),
+                                        new Ast.Statement.Case(
+                                                Optional.of(init(new Ast.Expression.Literal('n'), ast -> ast.setType(Environment.Type.CHARACTER))),
+                                                Arrays.asList(
+                                                        new Ast.Statement.Expression(
+                                                                init(new Ast.Expression.Function("print", Arrays.asList(init(new Ast.Expression.Literal("no"), ast -> ast.setType(Environment.Type.STRING)))),
+                                                                        ast -> ast.setFunction(new Environment.Function("print", "System.out.println", Arrays.asList(Environment.Type.ANY), Environment.Type.NIL, args -> Environment.NIL))
+                                                                )
+                                                        ),
+                                                        new Ast.Statement.Assignment(
+                                                                init(new Ast.Expression.Access(Optional.empty(), "letter"), ast -> ast.setVariable(new Environment.Variable("letter", "letter", Environment.Type.CHARACTER, true, Environment.NIL))),
+                                                                init(new Ast.Expression.Literal('b'), ast -> ast.setType(Environment.Type.CHARACTER))
                                                         )
                                                 )
                                         ),
@@ -457,7 +501,12 @@ public class GeneratorTests {
                                 "switch (letter) {",
                                 "    case 'y':",
                                 "        System.out.println(\"yes\");",
-                                "        letter = 'n';",
+                                "        letter = 'a';",
+                                "        break;",
+                                "    case 'n':",
+                                "        System.out.println(\"no\");",
+                                "        letter = 'b';",
+                                "        break;",
                                 "    default:",
                                 "        System.out.println(\"no\");",
                                 "}"
