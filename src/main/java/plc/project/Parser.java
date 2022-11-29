@@ -1,13 +1,10 @@
 package plc.project;
 
-import jdk.nashorn.internal.runtime.ParserException;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 /**
  * The parser takes the sequence of tokens emitted by the lexer and turns that
@@ -53,7 +50,7 @@ public final class Parser {
         //Then read in all the Function Objects
         while(tokens.has(0))
         {
-            if(match("FUN"))
+            if(peek("FUN"))
                 functions.add(parseFunction());
             //Should only be functions or globals, if not then throw error
             else {
@@ -161,6 +158,7 @@ public final class Parser {
      * next tokens start a method, aka {@code FUN}.
      */
     public Ast.Function parseFunction() throws ParseException {
+        match("FUN");
         if (!match(Token.Type.IDENTIFIER)) {
             throwError("Token should be an Identifier");
             return null;
@@ -205,6 +203,8 @@ public final class Parser {
             throwError("Missing END");
             return null;
         }
+        if(type.equals(""))
+            return new Ast.Function(name, parameters, parameterTypes, Optional.empty(),  statements);
         return new Ast.Function(name, parameters, parameterTypes, Optional.of(type),  statements);
     }
 
