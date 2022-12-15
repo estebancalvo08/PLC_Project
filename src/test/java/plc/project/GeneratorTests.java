@@ -321,6 +321,13 @@ public class GeneratorTests {
                         init(new Ast.Statement.Declaration("name", Optional.of("Integer"), Optional.empty()), ast -> ast.setVariable(new Environment.Variable("name", "name", Environment.Type.INTEGER, true, Environment.NIL))),
                         "int name;"
                 ),
+                Arguments.of("Supertype",
+                        // LET val : Integer = 10;
+                        init(new Ast.Statement.Declaration("str", Optional.of("Comparable"), Optional.of(
+                                init(new Ast.Expression.Literal("string"),ast -> ast.setType(Environment.Type.STRING))
+                        )), ast -> ast.setVariable(new Environment.Variable("str", "str", Environment.Type.COMPARABLE, true, Environment.NIL))),
+                        "Comparable str = \"string\";"
+                ),
                 Arguments.of("Initialization",
                         // LET name = 1.0;
                         init(new Ast.Statement.Declaration("name", Optional.empty(), Optional.of(
@@ -822,7 +829,7 @@ public class GeneratorTests {
                                 init(new Ast.Expression.Literal('c'), ast->ast.setType(Environment.Type.CHARACTER))
                                 ))
                                 , ast -> ast.setFunction(new Environment.Function("fun", "fun", Arrays.asList(Environment.Type.INTEGER, Environment.Type.DECIMAL, Environment.Type.STRING, Environment.Type.CHARACTER), Environment.Type.NIL, args -> Environment.NIL))),
-                        "fun(1,2.5,\"word\",'c')"
+                        "fun(1, 2.5, \"word\", 'c')"
                 )
         );
     }

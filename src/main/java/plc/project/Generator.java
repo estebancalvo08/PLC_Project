@@ -107,7 +107,7 @@ public final class Generator implements Ast.Visitor<Void> {
     @Override
     public Void visit(Ast.Statement.Declaration ast) {
         if(ast.getValue().isPresent())
-            print(ast.getValue().get().getType().getJvmName(), " ", ast.getVariable().getJvmName() , " = ", ast.getValue().get(), ";");
+            print(ast.getVariable().getType().getJvmName(), " ", ast.getVariable().getJvmName() , " = ", ast.getValue().get(), ";");
         else
             print(ast.getVariable().getType().getJvmName(), " ", ast.getVariable().getJvmName() , ";");
         return null;
@@ -263,7 +263,7 @@ public final class Generator implements Ast.Visitor<Void> {
             if(i == 0)
                 print(ast.getArguments().get(i));
             else
-                print(",", ast.getArguments().get(i));
+                print(", ", ast.getArguments().get(i));
         }
         print(")");
         return null;
